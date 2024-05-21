@@ -88,7 +88,7 @@ libreliq_functions = [
     ),(
         libreliq.reliq_from_compressed_independent,
         _reliq_struct,
-        [c_void_p,c_size_t,POINTER(c_void_p),POINTER(c_size_t),POINTER(_reliq_struct)]
+        [c_void_p,c_size_t,POINTER(c_void_p),POINTER(c_size_t)]
     )
 
 ]
@@ -134,9 +134,11 @@ class reliq():
 
     def _create_error(err):
         p_err = err.contents
-        return ValueError('failed {}: {}'.format(p_err.code,p_err.msg.decode()))
+        ret = ValueError('failed {}: {}'.format(p_err.code,p_err.msg.decode()))
+        cstdlib.free(err);
+        return ret
 
-    def match(self,script):
+    def search(self,script):
         s = script.encode("utf-8");
 
         exprs = _reliq_exprs_struct();
@@ -163,45 +165,7 @@ class reliq():
             raise reliq._create_error(err)
         return ret
 
-    def new(self,script,independent=False):
-        s = script.encode("utf-8");
-
-        exprs = _reliq_exprs_struct();
-        err = libreliq.reliq_ecomp(cast(s,c_void_p),len(s),byref(exprs))
-        if err:
-            libreliq.reliq_efree(byref(exprs))
-            raise reliq._create_error(err)
-            return None
-
-        compressed = c_void_p()
-        compressedl = c_size_t()
-
-        err = libreliq.reliq_exec(byref(self.struct),byref(compressed),byref(compressedl),byref(exprs));
-
-        ret = None;
-
-        if compressed:
-            if not err:
-                ret = reliq(None,False);
-                if independent:
-                    ptr = c_void_p();
-                    size = c_size_t();
-                    ret.struct = libreliq.reliq_from_compressed_independent(compressed,compressedl,byref(ptr),byref(size),byref(self.struct))
-                    ret.data_v = ptr
-                    ret.data_s = size
-                    ret.selfallocated = True
-                else:
-                    ret.struct = libreliq.reliq_from_compressed(compressed,compressedl,byref(self.struct))
-                    ret.data = self.data
-
-            cstdlib.free(compressed)
-
-        libreliq.reliq_efree(byref(exprs))
-        if err:
-            raise reliq._create_error(err)
-        return ret
-
-    def fmatch(script,html):
+    def fsearch(script,html):
         exprs = _reliq_exprs_struct();
         s = script.encode("utf-8");
         err = libreliq.reliq_ecomp(cast(s,c_void_p),len(s),byref(exprs))
@@ -228,6 +192,44 @@ class reliq():
             raise reliq._create_error(err)
         return ret
 
+    def filter(self,script,independent=False):
+        s = script.encode("utf-8");
+
+        exprs = _reliq_exprs_struct();
+        err = libreliq.reliq_ecomp(cast(s,c_void_p),len(s),byref(exprs))
+        if err:
+            libreliq.reliq_efree(byref(exprs))
+            raise reliq._create_error(err)
+            return None
+
+        compressed = c_void_p()
+        compressedl = c_size_t()
+
+        err = libreliq.reliq_exec(byref(self.struct),byref(compressed),byref(compressedl),byref(exprs));
+
+        ret = None;
+
+        if compressed:
+            if not err:
+                ret = reliq(None,False);
+                if independent:
+                    ptr = c_void_p();
+                    size = c_size_t();
+                    ret.struct = libreliq.reliq_from_compressed_independent(compressed,compressedl,byref(ptr),byref(size))
+                    ret.data_v = ptr
+                    ret.data_s = size
+                    ret.selfallocated = True
+                else:
+                    ret.struct = libreliq.reliq_from_compressed(compressed,compressedl,byref(self.struct))
+                    ret.data = self.data
+
+            cstdlib.free(compressed)
+
+        libreliq.reliq_efree(byref(exprs))
+        if err:
+            raise reliq._create_error(err)
+        return ret
+
     def __del__(self):
         libreliq.reliq_free(byref(self.struct))
         if self.selfallocated:
@@ -235,13 +237,13 @@ class reliq():
 
 #ht = "<html><li>loop1</li><li>jjjsa</li></html>"
 #ob = reliq(ht)
-#out = ob.match('li')
-#n1 = ob.new('li')
-#out = n1.match('li')
+#out = ob.search('li')
+#n1 = ob.filter('li')
+#out = n1.search('li')
 #print(len(n1))
 #print(n1)
 #print("n1[0] '" + str(n1[0]) + "'")
 #for i in range(1,50000):
-    #out = reliq.fmatch('li',ht)
-    #out = ob.match('li')
+    #out = reliq.fsearch('li',ht)
+    #out = ob.search('li')
 #print(out)
