@@ -138,7 +138,7 @@ class reliq():
         cstdlib.free(err);
         return ret
 
-    def search(self,script):
+    def _comp(script):
         s = script.encode("utf-8");
 
         exprs = _reliq_exprs_struct();
@@ -147,6 +147,10 @@ class reliq():
             libreliq.reliq_efree(byref(exprs))
             raise reliq._create_error(err)
             return None
+        return exprs
+
+    def search(self,script):
+        exprs = reliq._comp(script)
 
         src = c_void_p()
         srcl = c_size_t()
@@ -166,13 +170,7 @@ class reliq():
         return ret
 
     def fsearch(script,html):
-        exprs = _reliq_exprs_struct();
-        s = script.encode("utf-8");
-        err = libreliq.reliq_ecomp(cast(s,c_void_p),len(s),byref(exprs))
-        if err:
-            libreliq.reliq_efree(byref(exprs))
-            raise reliq._create_error(err)
-            return None
+        exprs = reliq._comp(script)
 
         src = c_void_p()
         srcl = c_size_t()
@@ -193,14 +191,7 @@ class reliq():
         return ret
 
     def filter(self,script,independent=False):
-        s = script.encode("utf-8");
-
-        exprs = _reliq_exprs_struct();
-        err = libreliq.reliq_ecomp(cast(s,c_void_p),len(s),byref(exprs))
-        if err:
-            libreliq.reliq_efree(byref(exprs))
-            raise reliq._create_error(err)
-            return None
+        exprs = reliq._comp(script)
 
         compressed = c_void_p()
         compressedl = c_size_t()
@@ -234,16 +225,3 @@ class reliq():
         libreliq.reliq_free(byref(self.struct))
         if self.selfallocated:
             cstdlib.free(self.data_v)
-
-#ht = "<html><li>loop1</li><li>jjjsa</li></html>"
-#ob = reliq(ht)
-#out = ob.search('li')
-#n1 = ob.filter('li')
-#out = n1.search('li')
-#print(len(n1))
-#print(n1)
-#print("n1[0] '" + str(n1[0]) + "'")
-#for i in range(1,50000):
-    #out = reliq.fsearch('li',ht)
-    #out = ob.search('li')
-#print(out)
