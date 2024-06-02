@@ -9,8 +9,37 @@ from typing import Union
 libreliq = CDLL("libreliq.so") #find_library finds nothing
 cstdlib = CDLL(ctypes.util.find_library("c"))
 
+class _reliq_str():
+    def __init__(self,string: Union[str,bytes,c_void_p],size=0,selfallocated=False):
+        if isinstance(string,str):
+            string = string.encode("utf-8")
+
+        self.string = string
+        self.data = string
+
+        if isinstance(string,bytes):
+            size = len(self.data)
+            self.data = cast(self.data,c_void_p)
+        self.size = size
+
+    def __str__(self):
+        string = self.string
+        if isinstance(string,c_void_p):
+            string = string_at(string,self.size).decode()
+        return string.decode()
+
+    def __del__(self):
+        if isinstance(self.string,c_void_p):
+            cstdlib.free(self.string)
+
 class _reliq_cstr_struct(Structure):
     _fields_ = [('b',c_void_p),('s',c_size_t)]
+
+    def __bytes__(self):
+        return string_at(self.b,self.s)
+
+    def __str__(self):
+        return bytes(self).decode()
 
 class _reliq_cstr_pair_struct(Structure):
     _fields_ = [('f',_reliq_cstr_struct),('s',_reliq_cstr_struct)]
@@ -102,24 +131,77 @@ def def_functions(functions):
 def_functions(cstdlib_functions)
 def_functions(libreliq_functions)
 
+class reliq_hnode():
+    def __init__(self,struct: _reliq_hnode_struct,data: _reliq_str):
+        self.struct = _reliq_hnode_struct();
+        memmove(byref(self.struct),byref(struct),sizeof(_reliq_hnode_struct))
+
+        attribsl = struct.attribsl
+        self.attr = None
+        if attribsl > 0:
+            attribs_type = _reliq_cstr_pair_struct*attribsl;
+            self.attr = attribs_type()
+            memmove(self.attr,struct.attribs,sizeof(attribs_type))
+
+        self.data = data
+
+    def all(self) -> str:
+        return str(self.struct.all)
+
+    def __str__(self):
+        return self.all()
+
+    def tag(self) -> str:
+        return str(self.struct.tag)
+
+    def insides(self) -> str:
+        return str(self.struct.insides)
+
+    def child_count(self) -> int:
+        return self.struct.child_count
+
+    def lvl(self) -> int:
+        return self.struct.lvl
+
+    def attribsl(self) -> int:
+        return self.struct.attribsl
+
+    def attribs(self) -> str:
+        ret = {}
+        length = self.attribsl()
+        i = 0
+        attr = self.attr
+
+        while i < length:
+            key = str(attr[i].f)
+            t = ""
+            prev = ret.get(key)
+            if prev is not None:
+                t += ret.get(key);
+            if len(t) > 0:
+                t += " "
+            t += str(attr[i].s)
+            ret[key] = t
+            i += 1
+        return ret
+
+    #!todo nodes(), text()
+
 class reliq():
-    def __init__(self,html: Union[str,bytes],_parse=True):
-        self.data = html
+    def __init__(self,html: Union[str,bytes]):
+        self.data = None
+        self.struct = None
         if html is None:
-            html = ''
-        if isinstance(html,str):
-            self.data = html.encode("utf-8")
-        self.data_v = c_void_p();
-        self.data_s = c_size_t();
-        self.selfallocated = False
-        if _parse:
-            self.struct = libreliq.reliq_init(cast(self.data,c_void_p),len(self.data),None)
+            return
+
+        self.data = _reliq_str(html,len(html))
+        self.struct = libreliq.reliq_init(self.data.data,self.data.size,None)
 
     def __len__(self):
         return self.struct.nodesl
 
     def __getitem__(self,item):
-        return self.struct.nodes[item]
+        return reliq_hnode(self.struct.nodes[item],self.data)
 
     def __str__(self):
         i = 0
@@ -132,9 +214,7 @@ class reliq():
         return ret
 
     def contents(self):
-        if self.selfallocated:
-            return string_at(self.data_v,self.data_s.value).decode()
-        return self.data.decode()
+        return str(self.data)
 
     def _create_error(err: POINTER(_reliq_error_struct)):
         p_err = err.contents
@@ -224,14 +304,12 @@ class reliq():
 
         if compressed:
             if not err:
-                ret = reliq(None,False);
+                ret = reliq(None);
                 if independent:
                     ptr = c_void_p();
                     size = c_size_t();
                     ret.struct = libreliq.reliq_from_compressed_independent(compressed,compressedl,byref(ptr),byref(size))
-                    ret.data_v = ptr
-                    ret.data_s = size
-                    ret.selfallocated = True
+                    ret.data = _reliq_str(ptr,size)
                 else:
                     ret.struct = libreliq.reliq_from_compressed(compressed,compressedl,byref(self.struct))
                     ret.data = self.data
@@ -243,6 +321,5 @@ class reliq():
         return ret
 
     def __del__(self):
-        libreliq.reliq_free(byref(self.struct))
-        if self.selfallocated:
-            cstdlib.free(self.data_v)
+        if self.struct is not None:
+            libreliq.reliq_free(byref(self.struct))
