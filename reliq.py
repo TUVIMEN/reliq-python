@@ -4,6 +4,7 @@
 
 from ctypes import *
 import ctypes.util
+from typing import Union
 
 libreliq = CDLL("libreliq.so") #find_library finds nothing
 cstdlib = CDLL(ctypes.util.find_library("c"))
@@ -102,8 +103,11 @@ def_functions(cstdlib_functions)
 def_functions(libreliq_functions)
 
 class reliq():
-    def __init__(self,html,_parse=True):
-        if html is not None:
+    def __init__(self,html: Union[str,bytes],_parse=True):
+        self.data = html
+        if html is None:
+            html = ''
+        if isinstance(html,str):
             self.data = html.encode("utf-8")
         self.data_v = c_void_p();
         self.data_s = c_size_t();
@@ -132,25 +136,37 @@ class reliq():
             return string_at(self.data_v,self.data_s.value).decode()
         return self.data.decode()
 
-    def _create_error(err):
+    def _create_error(err: POINTER(_reliq_error_struct)):
         p_err = err.contents
         ret = ValueError('failed {}: {}'.format(p_err.code,p_err.msg.decode()))
         cstdlib.free(err);
         return ret
 
-    def _comp(script):
-        s = script.encode("utf-8");
+    class expr():
+        def __init__(self,script: str):
+            self.exprs = None
+            s = script.encode("utf-8");
 
-        exprs = _reliq_exprs_struct();
-        err = libreliq.reliq_ecomp(cast(s,c_void_p),len(s),byref(exprs))
-        if err:
-            libreliq.reliq_efree(byref(exprs))
-            raise reliq._create_error(err)
-            return None
-        return exprs
+            exprs = _reliq_exprs_struct();
+            err = libreliq.reliq_ecomp(cast(s,c_void_p),len(s),byref(exprs))
+            if err:
+                libreliq.reliq_efree(byref(exprs))
+                raise reliq._create_error(err)
+                exprs = None
+            self.exprs = exprs
 
-    def search(self,script):
-        exprs = reliq._comp(script)
+        def _extract(self):
+            return self.exprs
+
+        def __del__(self):
+            if self.exprs is not None:
+                libreliq.reliq_efree(byref(self.exprs))
+
+    def search(self,script: Union[str,"reliq.expr"]) -> str:
+        e = script
+        if not isinstance(script,reliq.expr):
+            e = reliq.expr(script)
+        exprs = e._extract()
 
         src = c_void_p()
         srcl = c_size_t()
@@ -164,18 +180,22 @@ class reliq():
                 ret = string_at(src,srcl.value).decode()
             cstdlib.free(src)
 
-        libreliq.reliq_efree(byref(exprs))
         if err:
             raise reliq._create_error(err)
         return ret
 
-    def fsearch(script,html):
-        exprs = reliq._comp(script)
+    def fsearch(script: Union[str,"reliq.expr"],html: Union[str,bytes]) -> str:
+        e = script
+        if not isinstance(script,reliq.expr):
+            e = reliq.expr(script)
+        exprs = e._extract()
 
         src = c_void_p()
         srcl = c_size_t()
 
-        h = html.encode("utf-8");
+        h = html
+        if isinstance(h,str):
+            h = html.encode("utf-8");
         err = libreliq.reliq_fexec_str(cast(h,c_void_p),len(h),byref(src),byref(srcl),byref(exprs),None);
 
         ret = None;
@@ -185,13 +205,15 @@ class reliq():
                 ret = string_at(src,srcl.value).decode()
             cstdlib.free(src)
 
-        libreliq.reliq_efree(byref(exprs))
         if err:
             raise reliq._create_error(err)
         return ret
 
-    def filter(self,script,independent=False):
-        exprs = reliq._comp(script)
+    def filter(self,script: Union[str,"reliq.expr"],independent=False) -> "reliq":
+        e = script
+        if not isinstance(script,reliq.expr):
+            e = reliq.expr(script)
+        exprs = e._extract()
 
         compressed = c_void_p()
         compressedl = c_size_t()
@@ -216,7 +238,6 @@ class reliq():
 
             cstdlib.free(compressed)
 
-        libreliq.reliq_efree(byref(exprs))
         if err:
             raise reliq._create_error(err)
         return ret
