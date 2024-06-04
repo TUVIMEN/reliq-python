@@ -311,7 +311,7 @@ class reliq():
         if self.__element is not None:
             struct = _reliq_struct()
             memmove(byref(struct),byref(self.struct.struct),sizeof(_reliq_struct))
-            struct.nodesl = 1
+            struct.nodesl = self.__element.child_count+1
             struct.nodes = pointer(self.__element)
 
         err = libreliq.reliq_exec_str(byref(struct),byref(src),byref(srcl),byref(exprs));
@@ -368,7 +368,7 @@ class reliq():
         if self.__element is not None:
             struct = _reliq_struct()
             memmove(byref(struct),byref(self.struct.struct),sizeof(_reliq_struct))
-            struct.nodesl = 1
+            struct.nodesl = self.__element.child_count+1
             struct.nodes = pointer(self.__element)
 
         err = libreliq.reliq_exec(byref(struct),byref(compressed),byref(compressedl),byref(exprs));
