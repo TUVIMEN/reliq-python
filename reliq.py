@@ -6,7 +6,8 @@ from ctypes import *
 import ctypes.util
 from typing import Union,Optional
 
-libreliq = CDLL("libreliq.so") #find_library finds nothing
+#find_library finds nothing
+libreliq = CDLL("libreliq.so")
 cstdlib = CDLL(ctypes.util.find_library("c"))
 
 class _reliq_str():

@@ -2,9 +2,13 @@
 
 A python module for [reliq](https://github.com/TUVIMEN/reliq) library.
 
-## Installation
+## Requirements
 
-    install -m 755 reliq.py /usr/lib/python3.12/site-packages/
+- [reliq](https://github.com/TUVIMEN/reliq)
+
+## Install
+
+    pip install reliq
 
 ## Import
 
