@@ -270,6 +270,7 @@ class reliq():
     def get_data(self) -> str:
         return str(self.data)
 
+    @staticmethod
     def _create_error(err: POINTER(_reliq_error_struct)):
         p_err = err.contents
         ret = ValueError('failed {}: {}'.format(p_err.code,p_err.msg.decode()))
@@ -328,6 +329,7 @@ class reliq():
             raise reliq._create_error(err)
         return ret
 
+    @staticmethod
     def fsearch(script: Union[str,"reliq.expr"],html: Union[str,bytes]) -> Optional[str]:
         e = script
         if not isinstance(script,reliq.expr):
