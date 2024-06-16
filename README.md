@@ -44,13 +44,10 @@ images = []
 #filter()
 #   returns object holding list of results such object
 #   behaves like an array, but can be converted to array
-#   with unpack() method
+#   with either descendants() or children() methods
 
-#result can be accessed like an array
-for i in rq.filter(r'table; tr')[:-2]:
+for i in rq.filter(r'table; tr').children()[:-2]:
     #"i"
-    #   also can be accessed as an array of its children
-    #   and it also works with unpack().
     #   It has a set of functions for getting its properties:
     #       tag()           tag name
     #       insides()       string containing contents inside tag
@@ -61,7 +58,9 @@ for i in rq.filter(r'table; tr')[:-2]:
 
     if i.child_count() < 3 and i[0].tag() == "div":
         continue
-    
+
+    #objects can be accessed as an array which is the same
+    #as array returned by descendants() method
     link = i[5].attribs()['href']
     if re.match('^https://$',href):
         links.append(link)

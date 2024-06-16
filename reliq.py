@@ -157,6 +157,22 @@ class reliq():
         ret.__element = element
         return ret
 
+    def _elnodes(self) -> [POINTER(_reliq_hnode_struct),c_size_t]:
+        if self.struct is None:
+            return [None,0]
+
+        nodesl = self.struct.struct.nodesl
+        nodes = self.struct.struct.nodes
+
+        if self.__element is not None:
+            nodesl = self.__element.child_count
+            if nodesl > 0:
+                t = cast(byref(self.__element),c_void_p)
+                t.value += sizeof(_reliq_hnode_struct)
+                nodes = cast(t,POINTER(_reliq_hnode_struct))
+
+        return [nodes,nodesl]
+
     def __len__(self):
         if self.struct is None:
             return 0
@@ -169,15 +185,7 @@ class reliq():
             raise IndexError("list index out of range")
             return None
 
-        nodesl = self.struct.struct.nodesl
-        nodes = self.struct.struct.nodes
-
-        if self.__element is not None:
-            nodesl = self.__element.child_count
-            if nodesl > 0 and item < nodesl:
-                t = cast(byref(self.__element),c_void_p)
-                t.value += sizeof(_reliq_hnode_struct)
-                nodes = cast(t,POINTER(_reliq_hnode_struct))
+        nodes, nodesl = self._elnodes()
 
         if item >= nodesl:
             raise IndexError("list index out of range")
@@ -185,17 +193,26 @@ class reliq():
 
         return reliq._init_copy(self.data,self.struct,nodes[item])
 
-    def unpack(self) -> list:
+    def children(self) -> list:
         if self.struct is None:
             return []
 
         ret = []
-        if self.__element is not None:
-            ret.append(reliq._init_copy(self.data,self.struct,self.__element))
-            return ret
+        nodes, nodesl = self._elnodes()
 
-        nodesl = self.struct.struct.nodesl
-        nodes = self.struct.struct.nodes
+        i = 0
+        while i < nodesl:
+            ret.append(reliq._init_copy(self.data,self.struct,nodes[i]))
+            i += nodes[i].child_count+1
+
+        return ret
+
+    def descendants(self) -> list:
+        if self.struct is None:
+            return []
+
+        ret = []
+        nodes, nodesl = self._elnodes()
 
         i = 0
         while i < nodesl:

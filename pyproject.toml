@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "reliq"
+version = "0.0.3"
+description = "Python ctypes bindings for reliq"
+readme = "README.md"
+requires-python = ">=3.7"
+license = {file = "LICENSE"}
+keywords = ["ctypes", "html", "parser", "text-processing"]
+authors = [
+  {name = "Dominik Stanisław Suchora", email = "suchora.dominik7@gmail.com" }
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+
+  "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.7",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3 :: Only"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/TUVIMEN/reliq-python"
+
+[tool.setuptools]
+py-modules = ["reliq"]
