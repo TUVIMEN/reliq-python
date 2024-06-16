@@ -276,7 +276,7 @@ class reliq():
             t = ""
             prev = ret.get(key)
             if prev is not None:
-                t += ret.get(key);
+                t += ret.get(key)
             if len(t) > 0:
                 t += " "
             t += str(attr[i].s)
@@ -291,15 +291,15 @@ class reliq():
     def _create_error(err: POINTER(_reliq_error_struct)):
         p_err = err.contents
         ret = ValueError('failed {}: {}'.format(p_err.code,p_err.msg.decode()))
-        cstdlib.free(err);
+        cstdlib.free(err)
         return ret
 
     class expr():
         def __init__(self,script: str):
             self.exprs = None
-            s = script.encode("utf-8");
+            s = script.encode("utf-8")
 
-            exprs = _reliq_exprs_struct();
+            exprs = _reliq_exprs_struct()
             err = libreliq.reliq_ecomp(cast(s,c_void_p),len(s),byref(exprs))
             if err:
                 libreliq.reliq_efree(byref(exprs))
@@ -333,9 +333,9 @@ class reliq():
             struct.nodesl = self.__element.child_count+1
             struct.nodes = pointer(self.__element)
 
-        err = libreliq.reliq_exec_str(byref(struct),byref(src),byref(srcl),byref(exprs));
+        err = libreliq.reliq_exec_str(byref(struct),byref(src),byref(srcl),byref(exprs))
 
-        ret = None;
+        ret = None
 
         if src:
             if not err:
@@ -358,10 +358,10 @@ class reliq():
 
         h = html
         if isinstance(h,str):
-            h = html.encode("utf-8");
-        err = libreliq.reliq_fexec_str(cast(h,c_void_p),len(h),byref(src),byref(srcl),byref(exprs),None);
+            h = html.encode("utf-8")
+        err = libreliq.reliq_fexec_str(cast(h,c_void_p),len(h),byref(src),byref(srcl),byref(exprs),None)
 
-        ret = None;
+        ret = None
 
         if src:
             if not err:
@@ -372,7 +372,7 @@ class reliq():
             raise reliq._create_error(err)
         return ret
 
-    def filter(self,script: Union[str,"reliq.expr"],independent=False) -> Optional["reliq"]:
+    def filter(self,script: Union[str,"reliq.expr"],independent=False) -> "reliq":
         if self.struct is None:
             return self
 
@@ -391,17 +391,15 @@ class reliq():
             struct.nodesl = self.__element.child_count+1
             struct.nodes = pointer(self.__element)
 
-        err = libreliq.reliq_exec(byref(struct),byref(compressed),byref(compressedl),byref(exprs));
-
-        ret = None;
+        err = libreliq.reliq_exec(byref(struct),byref(compressed),byref(compressedl),byref(exprs))
 
         if compressed:
             if not err:
                 struct = None
                 data = None
                 if independent:
-                    ptr = c_void_p();
-                    size = c_size_t();
+                    ptr = c_void_p()
+                    size = c_size_t()
                     struct = reliq_struct(libreliq.reliq_from_compressed_independent(compressed,compressedl,byref(ptr),byref(size)))
                     data = _reliq_str(ptr,size)
                 else:
@@ -409,6 +407,8 @@ class reliq():
                     data = self.data
 
                 ret = reliq._init_copy(data,struct,None)
+        else:
+            ret = reliq(None)
 
 
             cstdlib.free(compressed)
