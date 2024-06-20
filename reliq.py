@@ -140,7 +140,13 @@ class reliq_struct():
         libreliq.reliq_free(byref(self.struct))
 
 class reliq():
-    def __init__(self,html: Union[str,bytes,None]):
+    def __init__(self,html: Union['reliq',str,bytes,None]):
+        if isinstance(html,reliq):
+            self.data = html.data
+            self.struct = html.struct
+            self.__element = html.__element
+            return
+
         self.data = None
         self.struct = None
         self.__element = None
