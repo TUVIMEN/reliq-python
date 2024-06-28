@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "reliq"
-version = "0.0.5"
+version = "0.0.6"
 description = "Python ctypes bindings for reliq"
 readme = "README.md"
 requires-python = ">=3.7"
-license = {file = "LICENSE"}
+license = {text = "GPLv3"}
 keywords = ["ctypes", "html", "parser", "text-processing"]
 authors = [
   {name = "Dominik Stanisław Suchora", email = "suchora.dominik7@gmail.com" }
