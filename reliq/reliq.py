@@ -2,12 +2,17 @@
 # by Dominik Stanisław Suchora <suchora.dominik7@gmail.com>
 # License: GNU GPLv3
 
+import os
 from ctypes import *
 import ctypes.util
 from typing import Union,Optional
 
-#find_library finds nothing
-libreliq = CDLL("libreliq.so")
+libreliq_name = 'libreliq.so'
+libreliq_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),libreliq_name)
+if not os.path.exists(libreliq_path):
+    libreliq_path = libreliq_name
+libreliq = CDLL(libreliq_path)
+
 cstdlib = CDLL(ctypes.util.find_library("c"))
 
 class _reliq_str():

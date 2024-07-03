@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "reliq"
-version = "0.0.6"
+version = "0.0.7"
 description = "Python ctypes bindings for reliq"
 readme = "README.md"
 requires-python = ">=3.7"
@@ -37,4 +37,4 @@ classifiers = [
 "Homepage" = "https://github.com/TUVIMEN/reliq-python"
 
 [tool.setuptools]
-py-modules = ["reliq"]
+packages = ["reliq"]

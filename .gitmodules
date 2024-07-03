@@ -1,0 +1,3 @@
+[submodule "reliq-c"]
+	path = reliq-c
+	url = https://github.com/TUVIMEN/reliq
