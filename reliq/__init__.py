@@ -1,1 +1,1 @@
-from .reliq import reliq
+from .reliq import reliq, ReliqError

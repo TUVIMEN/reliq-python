@@ -17,6 +17,8 @@ A python module for [reliq](https://github.com/TUVIMEN/reliq) library.
 ## Usage
 
 ```python
+from reliq import reliq, ReliqError
+
 html = ""
 with open('index.html','r') as f:
     html = f.read()
@@ -82,4 +84,9 @@ for i in rq.filter(r'table; tr').children()[:-2]:
 #   grouping brackets and separating commas will throw an exception
 for i in reliq.fsearch(r'ul; img src | "%(src)v\n"',html).split('\n')[:-1]:
     images.append(i)
+
+try: #handle errors
+    reliq.fsearch('p / /','<p></p>')
+except ReliqError:
+    print("error")
 ```

@@ -7,6 +7,9 @@ from ctypes import *
 import ctypes.util
 from typing import Union,Optional
 
+class ReliqError(Exception):
+    pass
+
 libreliq_name = 'libreliq.so'
 libreliq_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),libreliq_name)
 if not os.path.exists(libreliq_path):
@@ -301,7 +304,7 @@ class reliq():
     @staticmethod
     def _create_error(err: POINTER(_reliq_error_struct)):
         p_err = err.contents
-        ret = ValueError('failed {}: {}'.format(p_err.code,p_err.msg.decode()))
+        ret = ReliqError('failed {}: {}'.format(p_err.code,p_err.msg.decode()))
         cstdlib.free(err)
         return ret
 
