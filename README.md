@@ -68,6 +68,7 @@ for i in rq.filter(r'table; tr').children()[:-2]:
         links.append(link)
         continue
 
+    #search() returns str, in this case expression is already compiled
     user = json.loads(i.search(expr))
     users.append(user)
 
@@ -90,3 +91,6 @@ try: #handle errors
 except ReliqError:
     print("error")
 ```
+## Projects using reliq
+
+- [forumscraper](https://github.com/TUVIMEN/forumscraper)
