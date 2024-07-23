@@ -424,8 +424,7 @@ class reliq():
         else:
             ret = reliq(None)
 
-
-            cstdlib.free(compressed)
+        cstdlib.free(compressed)
 
         if err:
             raise reliq._create_error(err)
