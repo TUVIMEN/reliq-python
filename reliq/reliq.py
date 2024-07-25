@@ -18,7 +18,7 @@ libreliq = CDLL(libreliq_path)
 
 cstdlib = CDLL(ctypes.util.find_library("c"))
 
-class _reliq_str():
+class reliq_str():
     def __init__(self,string: Union[str,bytes,c_void_p],size=0,selfallocated=False):
         if isinstance(string,str):
             string = string.encode("utf-8")
@@ -26,9 +26,8 @@ class _reliq_str():
         self.string = string
         self.data = string
 
-        if isinstance(string,bytes):
+        if isinstance(string,bytes) and size == 0:
             size = len(self.data)
-            self.data = cast(self.data,c_void_p)
         self.size = size
 
     def __str__(self):
@@ -73,6 +72,7 @@ class _reliq_exprs_struct(Structure):
 
 class _reliq_struct(Structure):
     _fields_ = [('data',c_void_p),
+                ('freedata',c_void_p),
                 ('nodes',POINTER(_reliq_hnode_struct)),
                 ('output',c_void_p),
                 ('expr',c_void_p),
@@ -80,7 +80,7 @@ class _reliq_struct(Structure):
                 ('nodef',c_void_p),
                 ('nodefl',c_size_t),
                 ('nodesl',c_size_t),
-                ('size',c_size_t),
+                ('datal',c_size_t),
                 ('flags',c_ubyte)]
 
 cstdlib_functions = [
@@ -127,7 +127,7 @@ libreliq_functions = [
     ),(
         libreliq.reliq_from_compressed_independent,
         _reliq_struct,
-        [c_void_p,c_size_t,POINTER(c_void_p),POINTER(c_size_t)]
+        [c_void_p,c_size_t]
     )
 
 ]
@@ -161,10 +161,10 @@ class reliq():
         if html is None:
             return
 
-        self.data = _reliq_str(html,len(html))
+        self.data = reliq_str(html,len(html))
         self.struct = reliq_struct(libreliq.reliq_init(self.data.data,self.data.size,None))
 
-    def _init_copy(data: _reliq_str,struct: reliq_struct,element: _reliq_hnode_struct) -> 'reliq':
+    def _init_copy(data: reliq_str,struct: reliq_struct,element: _reliq_hnode_struct) -> 'reliq':
         ret = reliq(None)
         ret.data = data
         ret.struct = struct
@@ -412,10 +412,8 @@ class reliq():
                 struct = None
                 data = None
                 if independent:
-                    ptr = c_void_p()
-                    size = c_size_t()
-                    struct = reliq_struct(libreliq.reliq_from_compressed_independent(compressed,compressedl,byref(ptr),byref(size)))
-                    data = _reliq_str(ptr,size)
+                    struct = reliq_struct(libreliq.reliq_from_compressed_independent(compressed,compressedl))
+                    data = reliq_str(struct.struct.data,struct.struct.datal)
                 else:
                     struct = reliq_struct(libreliq.reliq_from_compressed(compressed,compressedl,byref(self.struct.struct))) #!
                     data = self.data
