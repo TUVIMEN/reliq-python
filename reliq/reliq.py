@@ -77,6 +77,7 @@ class _reliq_struct(Structure):
                 ('output',c_void_p),
                 ('expr',c_void_p),
                 ('attrib_buffer',c_void_p),
+                ('parent',c_void_p),
                 ('nodef',c_void_p),
                 ('nodefl',c_size_t),
                 ('nodesl',c_size_t),
@@ -330,7 +331,7 @@ class reliq():
 
     def search(self,script: Union[str,"reliq.expr"]) -> Optional[str]:
         if self.struct is None:
-            return self
+            return ""
 
         e = script
         if not isinstance(script,reliq.expr):
