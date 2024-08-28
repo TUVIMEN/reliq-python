@@ -16,7 +16,7 @@ if not os.path.exists(libreliq_path):
     libreliq_path = libreliq_name
 libreliq = CDLL(libreliq_path)
 
-cstdlib = CDLL(ctypes.util.find_library("c"))
+#cstdlib = CDLL(ctypes.util.find_library("c"))
 
 class reliq_str():
     def __init__(self,string: Union[str,bytes,c_void_p],size=0,selfallocated=False):
@@ -38,7 +38,7 @@ class reliq_str():
 
     def __del__(self):
         if isinstance(self.string,c_void_p):
-            cstdlib.free(self.string)
+            libreliq.reliq_std_free(self.string,0)
 
 class _reliq_cstr_struct(Structure):
     _fields_ = [('b',c_void_p),('s',c_size_t)]
@@ -84,19 +84,11 @@ class _reliq_struct(Structure):
                 ('datal',c_size_t),
                 ('flags',c_ubyte)]
 
-cstdlib_functions = [
-    (
-        cstdlib.free,
-        None,
-        [c_void_p]
-    )
-]
-
 libreliq_functions = [
     (
 		libreliq.reliq_init,
-		_reliq_struct,
-		[c_void_p,c_size_t,c_void_p]
+		POINTER(_reliq_error_struct),
+		[c_void_p,c_size_t,c_void_p,POINTER(_reliq_struct)]
     ),(
 		libreliq.reliq_free,
 		None,
@@ -129,8 +121,11 @@ libreliq_functions = [
         libreliq.reliq_from_compressed_independent,
         _reliq_struct,
         [c_void_p,c_size_t]
+    ),(
+        libreliq.reliq_std_free,
+        c_int,
+        [c_void_p,c_size_t]
     )
-
 ]
 
 def def_functions(functions):
@@ -138,7 +133,6 @@ def def_functions(functions):
         i[0].restype = i[1]
         i[0].argtypes = i[2]
 
-def_functions(cstdlib_functions)
 def_functions(libreliq_functions)
 
 class reliq_struct():
@@ -163,7 +157,11 @@ class reliq():
             return
 
         self.data = reliq_str(html,len(html))
-        self.struct = reliq_struct(libreliq.reliq_init(self.data.data,self.data.size,None))
+        rq = _reliq_struct()
+        err = libreliq.reliq_init(self.data.data,self.data.size,None,byref(rq))
+        if err:
+            raise reliq._create_error(err)
+        self.struct = reliq_struct(rq)
 
     def _init_copy(data: reliq_str,struct: reliq_struct,element: _reliq_hnode_struct) -> 'reliq':
         ret = reliq(None)
@@ -306,7 +304,7 @@ class reliq():
     def _create_error(err: POINTER(_reliq_error_struct)):
         p_err = err.contents
         ret = ReliqError('failed {}: {}'.format(p_err.code,p_err.msg.decode()))
-        cstdlib.free(err)
+        libreliq.reliq_std_free(err,0)
         return ret
 
     class expr():
@@ -355,7 +353,7 @@ class reliq():
         if src:
             if not err:
                 ret = string_at(src,srcl.value).decode()
-            cstdlib.free(src)
+            libreliq.reliq_std_free(src,0)
 
         if err:
             raise reliq._create_error(err)
@@ -381,7 +379,7 @@ class reliq():
         if src:
             if not err:
                 ret = string_at(src,srcl.value).decode()
-            cstdlib.free(src)
+            libreliq.reliq_std_free(src,0)
 
         if err:
             raise reliq._create_error(err)
@@ -423,7 +421,7 @@ class reliq():
         else:
             ret = reliq(None)
 
-        cstdlib.free(compressed)
+        libreliq.reliq_std_free(compressed,0)
 
         if err:
             raise reliq._create_error(err)
