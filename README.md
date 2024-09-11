@@ -45,15 +45,18 @@ images = []
 
 #filter()
 #   returns object holding list of results such object
-#   behaves like an array, but can be converted to array
-#   with either descendants() or children() methods
+#   behaves like an array, but can be converted to array with
+#       self() - objects with lvl() 0
+#       children() - objects with lvl() 1
+#       descendants() - objects with lvl > 0
+#       full() - same as indexing filter(), all objects
 
-for i in rq.filter(r'table; tr').children()[:-2]:
+for i in rq.filter(r'table; tr').self()[:-2]:
     #"i"
     #   It has a set of functions for getting its properties:
     #       tag()           tag name
     #       insides()       string containing contents inside tag
-    #       child_count()   count of children
+    #       desc_count()   count of descendants
     #       lvl()           level in html structure
     #       attribsl()      number of attributes
     #       attribs()       returns dictionary of attributes

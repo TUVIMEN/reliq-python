@@ -57,7 +57,7 @@ class _reliq_hnode_struct(Structure):
                 ('tag',_reliq_cstr_struct),
                 ('insides',_reliq_cstr_struct),
                 ('attribs',POINTER(_reliq_cstr_pair_struct)),
-                ('child_count',c_uint),
+                ('desc_count',c_uint),
                 ('attribsl',c_ushort),
                 ('lvl',c_ushort)]
 
@@ -178,7 +178,7 @@ class reliq():
         nodes = self.struct.struct.nodes
 
         if self.__element is not None:
-            nodesl = self.__element.child_count
+            nodesl = self.__element.desc_count
             if nodesl > 0:
                 t = cast(byref(self.__element),c_void_p)
                 t.value += sizeof(_reliq_hnode_struct)
@@ -190,7 +190,7 @@ class reliq():
         if self.struct is None:
             return 0
         if  self.__element is not None:
-            return self.__element.child_count
+            return self.__element.desc_count
         return self.struct.struct.nodesl
 
     def __getitem__(self,item) -> Optional['reliq']:
@@ -206,7 +206,7 @@ class reliq():
 
         return reliq._init_copy(self.data,self.struct,nodes[item])
 
-    def children(self) -> list:
+    def full(self) -> list:
         if self.struct is None:
             return []
 
@@ -216,7 +216,38 @@ class reliq():
         i = 0
         while i < nodesl:
             ret.append(reliq._init_copy(self.data,self.struct,nodes[i]))
-            i += nodes[i].child_count+1
+            i += 1
+
+        return ret
+
+    def self(self) -> list:
+        if self.struct is None:
+            return []
+
+        ret = []
+        nodes, nodesl = self._elnodes()
+
+        i = 0
+        while i < nodesl:
+            ret.append(reliq._init_copy(self.data,self.struct,nodes[i]))
+            i += nodes[i].desc_count+1
+
+        return ret
+
+    def children(self) -> list:
+        if self.struct is None:
+            return []
+
+        ret = []
+        nodes, nodesl = self._elnodes()
+
+        i = 1
+        while i < nodesl:
+            if nodes[i].lvl == 1:
+                ret.append(reliq._init_copy(self.data,self.struct,nodes[i]))
+                i += nodes[i].desc_count+1
+            else:
+                i += 1
 
         return ret
 
@@ -227,9 +258,10 @@ class reliq():
         ret = []
         nodes, nodesl = self._elnodes()
 
-        i = 0
+        i = 1
         while i < nodesl:
-            ret.append(reliq._init_copy(self.data,self.struct,nodes[i]))
+            if nodes[i].lvl != 0:
+                ret.append(reliq._init_copy(self.data,self.struct,nodes[i]))
             i += 1
 
         return ret
@@ -247,7 +279,7 @@ class reliq():
         i = 0
         while i < nodesl:
             ret += str(nodes[i])
-            i += nodes[i].child_count+1
+            i += nodes[i].desc_count+1
         return ret
 
     def tag(self) -> Optional[str]:
@@ -260,10 +292,10 @@ class reliq():
             return None
         return str(self.__element.insides)
 
-    def child_count(self) -> int:
+    def desc_count(self) -> int: #count of descendants
         if self.__element is None:
             return 0
-        return self.__element.child_count
+        return self.__element.desc_count
 
     def lvl(self) -> int:
         if self.__element is None:
@@ -343,7 +375,7 @@ class reliq():
         if self.__element is not None:
             struct = _reliq_struct()
             memmove(byref(struct),byref(self.struct.struct),sizeof(_reliq_struct))
-            struct.nodesl = self.__element.child_count+1
+            struct.nodesl = self.__element.desc_count+1
             struct.nodes = pointer(self.__element)
 
         err = libreliq.reliq_exec_str(byref(struct),byref(src),byref(srcl),byref(exprs))
@@ -401,7 +433,7 @@ class reliq():
         if self.__element is not None:
             struct = _reliq_struct()
             memmove(byref(struct),byref(self.struct.struct),sizeof(_reliq_struct))
-            struct.nodesl = self.__element.child_count+1
+            struct.nodesl = self.__element.desc_count+1
             struct.nodes = pointer(self.__element)
 
         err = libreliq.reliq_exec(byref(struct),byref(compressed),byref(compressedl),byref(exprs))
