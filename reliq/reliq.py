@@ -19,7 +19,7 @@ libreliq = CDLL(libreliq_path)
 #cstdlib = CDLL(ctypes.util.find_library("c"))
 
 class reliq_str():
-    def __init__(self,string: Union[str,bytes,c_void_p],size=0,selfallocated=False):
+    def __init__(self,string: Union[str,bytes,c_void_p],size=0):
         if isinstance(string,str):
             string = string.encode("utf-8")
 
@@ -156,7 +156,7 @@ class reliq():
         if html is None:
             return
 
-        self.data = reliq_str(html,len(html))
+        self.data = reliq_str(html)
         rq = _reliq_struct()
         err = libreliq.reliq_init(self.data.data,self.data.size,None,byref(rq))
         if err:
