@@ -91,7 +91,7 @@ libreliq_functions = [
 		[c_void_p,c_size_t,c_void_p,POINTER(_reliq_struct)]
     ),(
 		libreliq.reliq_free,
-		None,
+		c_int,
 		[POINTER(_reliq_struct)]
     ),(
         libreliq.reliq_ecomp,
@@ -380,7 +380,7 @@ class reliq():
 
         err = libreliq.reliq_exec_str(byref(struct),byref(src),byref(srcl),byref(exprs))
 
-        ret = None
+        ret = ""
 
         if src:
             if not err:
@@ -406,7 +406,7 @@ class reliq():
             h = html.encode("utf-8")
         err = libreliq.reliq_fexec_str(cast(h,c_void_p),len(h),byref(src),byref(srcl),byref(exprs),None)
 
-        ret = None
+        ret = ""
 
         if src:
             if not err:
