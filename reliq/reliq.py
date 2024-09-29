@@ -74,15 +74,8 @@ class _reliq_struct(Structure):
     _fields_ = [('data',c_void_p),
                 ('freedata',c_void_p),
                 ('nodes',POINTER(_reliq_hnode_struct)),
-                ('output',c_void_p),
-                ('expr',c_void_p),
-                ('attrib_buffer',c_void_p),
-                ('parent',c_void_p),
-                ('nodef',c_void_p),
-                ('nodefl',c_size_t),
                 ('nodesl',c_size_t),
-                ('datal',c_size_t),
-                ('flags',c_ubyte)]
+                ('datal',c_size_t)]
 
 libreliq_functions = [
     (
