@@ -133,7 +133,7 @@
         },
         {
           "name": "Build reliq",
-          "run": "make -C reliq-c clean lib -j4 CFLAGS='-O3'\nmv reliq-c/libreliq.so reliq/\n"
+          "run": "make -C reliq-c clean lib -j4 CFLAGS='-O3' LDFLAGS='/ucrt64/lib/libgnurx.a'\nmv reliq-c/libreliq.so reliq/\n"
         },
         {
           "name": "Build wheel",
