@@ -340,7 +340,6 @@ class reliq():
             exprs = _reliq_exprs_struct()
             err = libreliq.reliq_ecomp(cast(s,c_void_p),len(s),byref(exprs))
             if err:
-                libreliq.reliq_efree(byref(exprs))
                 raise reliq._create_error(err)
                 exprs = None
             self.exprs = exprs
