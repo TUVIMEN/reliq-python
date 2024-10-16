@@ -67,8 +67,23 @@ class _reliq_hnode_struct(Structure):
 class _reliq_error_struct(Structure):
     _fields_ = [('msg',c_char*512),('code',c_int)]
 
-class _reliq_exprs_struct(Structure):
-    _fields_ = [('b',c_void_p),('s',c_size_t)]
+class _reliq_output_field_struct(Structure):
+    _fields_ = [('name',_reliq_cstr_struct),
+                ('type',c_byte),
+                ('arr_delim',c_byte),
+                ('arr_type',c_byte),
+                ('isset',c_ubyte)]
+
+class _reliq_expr_struct(Structure):
+    _fields_ = [('outfield',_reliq_output_field_struct),
+                ('e',c_void_p),
+                ('nodef',c_void_p),
+                ('exprf',c_void_p),
+                ('nodefl',c_size_t),
+                ('exprfl',c_size_t),
+                ('childfields',c_uint16),
+                ('childformats',c_uint16),
+                ('flags',c_uint8)]
 
 class _reliq_struct(Structure):
     _fields_ = [('data',c_void_p),
@@ -89,23 +104,23 @@ libreliq_functions = [
     ),(
         libreliq.reliq_ecomp,
         POINTER(_reliq_error_struct),
-        [c_void_p,c_size_t,POINTER(_reliq_exprs_struct)]
+        [c_void_p,c_size_t,POINTER(_reliq_expr_struct)]
     ),(
         libreliq.reliq_efree,
         None,
-        [POINTER(_reliq_exprs_struct)]
+        [POINTER(_reliq_expr_struct)]
     ),(
 		libreliq.reliq_exec,
 		POINTER(_reliq_error_struct),
-		[POINTER(_reliq_struct),POINTER(c_void_p),POINTER(c_size_t),POINTER(_reliq_exprs_struct)]
+		[POINTER(_reliq_struct),POINTER(c_void_p),POINTER(c_size_t),POINTER(_reliq_expr_struct)]
     ),(
 		libreliq.reliq_exec_str,
 		POINTER(_reliq_error_struct),
-		[POINTER(_reliq_struct),POINTER(c_void_p),POINTER(c_size_t),POINTER(_reliq_exprs_struct)]
+		[POINTER(_reliq_struct),POINTER(c_void_p),POINTER(c_size_t),POINTER(_reliq_expr_struct)]
     ),(
         libreliq.reliq_fexec_str,
         POINTER(_reliq_error_struct),
-        [c_void_p,c_size_t,POINTER(c_void_p),POINTER(c_size_t),POINTER(_reliq_exprs_struct),c_void_p]
+        [c_void_p,c_size_t,POINTER(c_void_p),POINTER(c_size_t),POINTER(_reliq_expr_struct),c_void_p]
     ),(
         libreliq.reliq_from_compressed,
         _reliq_struct,
@@ -337,7 +352,7 @@ class reliq():
             self.exprs = None
             s = script.encode("utf-8")
 
-            exprs = _reliq_exprs_struct()
+            exprs = _reliq_expr_struct()
             err = libreliq.reliq_ecomp(cast(s,c_void_p),len(s),byref(exprs))
             if err:
                 raise reliq._create_error(err)
