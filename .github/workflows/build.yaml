@@ -27,7 +27,7 @@
         },
         {
           "name": "Upload artifact",
-          "uses": "actions/upload-artifact@v3.2.1",
+          "uses": "actions/upload-artifact@v4",
           "with": {
             "name": "wheel",
             "path": "dist/*"
@@ -62,7 +62,7 @@
         },
         {
           "name": "Upload artifact wheel",
-          "uses": "actions/upload-artifact@v3.2.1",
+          "uses": "actions/upload-artifact@v4",
           "with": {
             "name": "wheel",
             "path": "dist/*"
@@ -101,7 +101,7 @@
         },
         {
           "name": "Upload artifact wheel",
-          "uses": "actions/upload-artifact@v3.2.1",
+          "uses": "actions/upload-artifact@v4",
           "with": {
             "name": "wheel",
             "path": "artifacts/*"
@@ -141,7 +141,7 @@
         },
         {
           "name": "Upload artifact wheel",
-          "uses": "actions/upload-artifact@v3.2.1",
+          "uses": "actions/upload-artifact@v4",
           "with": {
             "name": "wheel",
             "path": "dist/*"
@@ -184,7 +184,7 @@
         },
         {
           "name": "Upload artifact wheel",
-          "uses": "actions/upload-artifact@v3.2.1",
+          "uses": "actions/upload-artifact@v4",
           "with": {
             "name": "wheel",
             "path": "dist/*"
