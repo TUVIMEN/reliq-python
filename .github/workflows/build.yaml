@@ -58,14 +58,14 @@
         },
         {
           "name": "Build wheel",
-          "run": "python -m pip install --upgrade pip\npip3 install --upgrade wheel\npip3 install --upgrade setuptools\npython setup.py bdist_wheel --plat-name manylinux2014_x86_64\nname=\"$(basename \"$(find dist -type f | head -n1)\")\"\necho \"$name\"\nbase=\"$(echo \"$name\" | sed -E 's/-cp[0-9]+-cp[0-9]+-/-cp###-cp###-/')\"\necho \"$base\"\nfor i in 37 38 39 310 311 312 313; do cp \"dist/$name\" \"dist/$(echo \"$base\" | sed \"s/###/$i/g\")\" || true; done\n"
+          "run": "python -m pip install --upgrade pip\npip3 install --upgrade wheel\npip3 install --upgrade setuptools\nplat=\"manylinux2014_x86_64\"\nmkdir out\nfor i in 37 38 39 310 311 312 313; do python setup.py bdist_wheel --plat-name \"$plat\"\nname=\"$(basename \"$(find dist -type f | head -n1)\")\"\nbase=\"$(echo \"$name\" | sed -E \"s/-cp[0-9]+-cp[0-9]+-/-cp$i-cp$i-/\")\"\ncp \"dist/$name\" \"out/$base\" || true\n rm dist/*; done\n"
         },
         {
           "name": "Upload artifact wheel",
           "uses": "actions/upload-artifact@v4",
           "with": {
             "name": "wheel-linux-x86",
-            "path": "linux/"
+            "path": "out/*"
           }
         }
       ]
@@ -96,7 +96,7 @@
             "setup": "mkdir -p \"${PWD}/artifacts\"\n",
             "dockerRunArgs": "--volume \"${PWD}/artifacts:/artifacts\"\n",
             "shell": "/bin/bash",
-            "run": "apt-get update -q -y\napt-get install -q -y git python3 python3-pip gcc make\ncase \"${{ matrix.arch }}\" in armv7) archname=\"armv7l\";; *) archname=\"${{ matrix.arch }}\";; esac\nmake -C reliq-c clean lib -j4 CFLAGS='-O3'\nmv reliq-c/libreliq.so reliq/\npython3 -m pip install --upgrade pip\npython3 -m pip install wheel --upgrade\npython3 -m pip install setuptools --upgrade\npython3 setup.py bdist_wheel --plat-name manylinux2014_$archname\nname=\"$(basename \"$(find dist -type f | head -n1)\")\"\nbase=\"$(echo \"$name\" | sed -E 's/-cp[0-9]+-cp[0-9]+-/-cp###-cp###-/')\"\nfor i in 37 38 39 310 311 312 313; do cp \"dist/$name\" \"dist/$(echo \"$base\" | sed \"s/###/$i/g\")\" || true; done\nmv dist/* artifacts\n"
+            "run": "apt-get update -q -y\napt-get install -q -y git python3 python3-pip gcc make\ncase \"${{ matrix.arch }}\" in armv7) archname=\"armv7l\";; *) archname=\"${{ matrix.arch }}\";; esac\nmake -C reliq-c clean lib -j4 CFLAGS='-O3'\nmv reliq-c/libreliq.so reliq/\npython3 -m pip install --upgrade pip\npython3 -m pip install wheel --upgrade\npython3 -m pip install setuptools --upgrade\nplat=\"manylinux2014_$archname\"\nmkdir out\nfor i in 37 38 39 310 311 312 313; do python setup.py bdist_wheel --plat-name \"$plat\"\nname=\"$(basename \"$(find dist -type f | head -n1)\")\"\nbase=\"$(echo \"$name\" | sed -E \"s/-cp[0-9]+-cp[0-9]+-/-cp$i-cp$i-/\")\"\ncp \"dist/$name\" \"out/$base\" || true\n rm dist/*; done\n"
           }
         },
         {
@@ -104,7 +104,7 @@
           "uses": "actions/upload-artifact@v4",
           "with": {
             "name": "wheel-linux-${{ matrix.arch }}",
-            "path": "artifacts/*"
+            "path": "out/*"
           }
         }
       ]
@@ -137,14 +137,14 @@
         },
         {
           "name": "Build wheel",
-          "run": "python -m pip install --break-system-packages --upgrade pip\npython -m pip install --break-system-packages --upgrade wheel\npython -m pip install --break-system-packages --upgrade setuptools\npython setup.py bdist_wheel --plat-name win_amd64\nname=\"$(basename \"$(find dist -type f | head -n1)\")\"\nbase=\"$(echo \"$name\" | sed -E 's/-cp[0-9]+-cp[0-9]+-/-cp###-cp###-/')\"\nfor i in 37 38 39 310 311 312 313; do cp \"dist/$name\" \"dist/$(echo \"$base\" | sed \"s/###/$i/g\")\" || true; done\n"
+          "run": "python -m pip install --break-system-packages --upgrade pip\npython -m pip install --break-system-packages --upgrade wheel\npython -m pip install --break-system-packages --upgrade setuptools\nplat=\"win_amd64\"\nmkdir out\nfor i in 37 38 39 310 311 312 313; do python setup.py bdist_wheel --plat-name \"$plat\"\nname=\"$(basename \"$(find dist -type f | head -n1)\")\"\nbase=\"$(echo \"$name\" | sed -E \"s/-cp[0-9]+-cp[0-9]+-/-cp$i-cp$i-/\")\"\ncp \"dist/$name\" \"out/$base\" || true\n rm dist/*; done\n"
         },
         {
           "name": "Upload artifact wheel",
           "uses": "actions/upload-artifact@v4",
           "with": {
             "name": "wheel-windows",
-            "path": "dist/*"
+            "path": "out/*"
           }
         }
       ]
@@ -180,14 +180,14 @@
         },
         {
           "name": "Build wheel",
-          "run": "python -m pip install --upgrade pip\npip3 install --upgrade wheel\npip3 install --upgrade setuptools\npython setup.py bdist_wheel --plat-name macosx_${{ matrix.os }}_0_arm64\nname=\"$(basename \"$(find dist -type f | head -n1)\")\"\nbase=\"$(echo \"$name\" | sed -E 's/-cp[0-9]+-cp[0-9]+-/-cp###-cp###-/')\"\nfor i in 37 38 39 310 311 312 313; do cp \"dist/$name\" \"dist/$(echo \"$base\" | sed \"s/###/$i/g\")\" || true; done\n"
+          "run": "python -m pip install --upgrade pip\npip3 install --upgrade wheel\npip3 install --upgrade setuptools\nplat=\"macosx_${{ matrix.os }}_0_arm64\"\nmkdir out\nfor i in 37 38 39 310 311 312 313; do python setup.py bdist_wheel --plat-name \"$plat\"\nname=\"$(basename \"$(find dist -type f | head -n1)\")\"\nbase=\"$(echo \"$name\" | sed -E \"s/-cp[0-9]+-cp[0-9]+-/-cp$i-cp$i-/\")\"\ncp \"dist/$name\" \"out/$base\" || true\n rm dist/*; done\n"
         },
         {
           "name": "Upload artifact wheel",
           "uses": "actions/upload-artifact@v4",
           "with": {
             "name": "wheel-mac-arm64-${{ matrix.os }}",
-            "path": "dist/*"
+            "path": "out/*"
           }
         }
       ]
