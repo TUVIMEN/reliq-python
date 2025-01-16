@@ -137,7 +137,7 @@
         },
         {
           "name": "Build wheel",
-          "run": "python -m pip install --break-system-packages --upgrade pip\npython -m pip install --break-system-packages --upgrade wheel\npython -m pip install --break-system-packages --upgrade setuptools\npython setup.py bdist_wheel --plat-name win-amd64\n"
+          "run": "python -m pip install --break-system-packages --upgrade pip\npython -m pip install --break-system-packages --upgrade wheel\npython -m pip install --break-system-packages --upgrade setuptools\npython setup.py bdist_wheel\n"
         },
         {
           "name": "Upload artifact wheel",
