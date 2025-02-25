@@ -155,6 +155,10 @@ libreliq_functions = [
         libreliq.reliq_std_free,
         c_int,
         [c_void_p,c_size_t]
+    ),(
+        libreliq.reliq_decode_entities_str,
+        None,
+        [c_void_p,c_size_t,POINTER(c_void_p),POINTER(c_size_t)]
     )
 ]
 
@@ -460,6 +464,19 @@ class reliq():
                 i += 1
 
         return ret
+
+    @staticmethod
+    def decode(string: str|bytes) -> str:
+        if isinstance(string,str):
+            string = string.encode("utf-8")
+        src = c_void_p()
+        srcl = c_size_t()
+
+        libreliq.reliq_decode_entities_str(cast(string,c_void_p),len(string),byref(src),byref(srcl))
+        ret = string_at(src,srcl.value).decode()
+        libreliq.reliq_std_free(src,0)
+        return ret
+
 
     def get_data(self) -> str:
         return str(self.data)
