@@ -231,17 +231,16 @@ class reliq():
         nodes = self.struct.struct.nodes
 
         if self.__element is not None:
-            nodesl = self.__element_d.desc()
-            if nodesl > 0:
-                nodes += chnode_sz
+            nodes = self.__element
+            nodesl = self.__element_d.desc()+1
 
         return [nodes,nodesl]
 
     def __len__(self):
         if self.struct is None:
             return 0
-        if  self.__element is not None:
-            return self.__element.desc_count
+        if self.__element is not None:
+            return self.__element_d.desc()
         return self.struct.struct.nodesl
 
     def __getitem__(self,item) -> Optional['reliq']:
@@ -251,6 +250,8 @@ class reliq():
 
         nodes, nodesl = self._elnodes()
 
+        if self.__element is not None:
+            item += 1
         if item >= nodesl:
             raise IndexError("list index out of range")
             return None
@@ -295,9 +296,13 @@ class reliq():
         nodes, nodesl = self._elnodes()
 
         i = 1
+        lvl = -1
         while i < nodesl:
             hn = chnode_conv(self.struct.struct,nodes+i*chnode_sz)
-            if hn.lvl == 1:
+            if lvl == -1:
+                lvl = hn.lvl
+
+            if hn.lvl == lvl:
                 n = reliq._init_copy(self.data,self.struct,nodes+i*chnode_sz)
                 ret.append(n)
                 hn = n.__element_d
@@ -432,6 +437,29 @@ class reliq():
         if self.__element is None:
             return reliqType.plural
         return self.__element_d.ntype()
+
+    def text(self,recursive=False) -> str:
+        if self.struct is None:
+            return ""
+
+        ret = ""
+        nodes, nodesl = self._elnodes()
+        i = 0
+        lvl = -1
+        while i < nodesl:
+            hn = chnode_conv(self.struct.struct,nodes+i*chnode_sz)
+            if lvl == -1:
+                lvl = hn.lvl
+
+            if hn.ntype() in reliqType.textall:
+                ret += str(hn)
+
+            if not recursive and hn.lvl == lvl+1:
+                i += hn.desc()+1
+            else:
+                i += 1
+
+        return ret
 
     def get_data(self) -> str:
         return str(self.data)
