@@ -27,8 +27,8 @@ rq = reliq(html) #parse html
 expr = reliq.expr(r"""
     div .user; {
         a href; {
-            .name * self@ | "%i",
-            .link * self@ | "%(href)v"
+            .name @ | "%i",
+            .link @ | "%(href)v"
         },
         .score.u span .score,
         .info dl; {
