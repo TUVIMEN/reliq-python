@@ -112,8 +112,6 @@ print(rq[2].text())
 #decodes html entities
 reliq.decode('loop &amp; &lt &tdot; &#212')
 ```
-## Projects using reliq
+## Projects using reliq in python
 
 - [forumscraper](https://github.com/TUVIMEN/forumscraper)
-- [torge](https://github.com/TUVIMEN/torge)
-- [mangabuddy-scraper](https://github.com/TUVIMEN/mangabuddy-scraper)
