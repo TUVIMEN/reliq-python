@@ -14,7 +14,7 @@ authors = [
   {name = "Dominik Stanisław Suchora", email = "suchora.dominik7@gmail.com" }
 ]
 classifiers = [
-  "Development Status :: 3 - Alpha",
+  "Development Status :: 4 - Beta",
 
   "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
 
