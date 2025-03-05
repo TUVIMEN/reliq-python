@@ -115,3 +115,4 @@ reliq.decode('loop &amp; &lt &tdot; &#212')
 ## Projects using reliq in python
 
 - [forumscraper](https://github.com/TUVIMEN/forumscraper)
+- [lightnovelworld](https://github.com/TUVIMEN/lightnovelworld/)
