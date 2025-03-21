@@ -200,14 +200,14 @@ class reliq():
     def __init__(self,html: Optional[typing.Union[str,bytes,'reliq']]):
         self.data: Optional[reliq_str] = None
         self.struct: Optional[reliq_struct] = None
-        self.__element: Optional[c_void_p] = None
-        self.__element_d: Optional[_reliq_hnode_struct] = None
+        self._element: Optional[c_void_p] = None
+        self._element_d: Optional[_reliq_hnode_struct] = None
 
         if isinstance(html,reliq):
             self.data = html.data
             self.struct = html.struct
-            self.__element = html.__element
-            self.__element_d = html.__element_d
+            self._element = html._element
+            self._element_d = html._element_d
             return
         if html is None:
             return
@@ -224,11 +224,11 @@ class reliq():
         ret = reliq(None)
         ret.data = data
         ret.struct = struct
-        ret.__element = element
+        ret._element = element
         if element is None:
-            ret.__element_d = None
+            ret._element_d = None
         else:
-            ret.__element_d = chnode_conv(struct.struct,element)
+            ret._element_d = chnode_conv(struct.struct,element)
         return ret
 
     def _elnodes(self) -> Tuple[Optional[c_void_p],int]:
@@ -238,17 +238,17 @@ class reliq():
         nodesl = self.struct.struct.nodesl
         nodes = self.struct.struct.nodes
 
-        if self.__element is not None and self.__element_d is not None:
-            nodes = self.__element
-            nodesl = self.__element_d.desc()+1
+        if self._element is not None and self._element_d is not None:
+            nodes = self._element
+            nodesl = self._element_d.desc()+1
 
         return (nodes,nodesl)
 
     def __len__(self):
         if self.struct is None:
             return 0
-        if self.__element is not None:
-            return self.__element_d.desc()
+        if self._element is not None:
+            return self._element_d.desc()
         return self.struct.struct.nodesl
 
 
@@ -265,7 +265,7 @@ class reliq():
 
         nodes, nodesl = self._elnodes()
 
-        if self.__element is not None:
+        if self._element is not None:
             item += 1
         if item >= nodesl:
             raise IndexError("list index out of range")
@@ -297,7 +297,7 @@ class reliq():
         while i < nodesl:
             n = reliq._init_copy(self.data,self.struct,nodes+i*chnode_sz)
             ret.append(n)
-            hn = n.__element_d
+            hn = n._element_d
             i += hn.desc()+1
 
         return ret
@@ -319,7 +319,7 @@ class reliq():
             if hn.lvl == lvl:
                 n = reliq._init_copy(self.data,self.struct,nodes+i*chnode_sz)
                 ret.append(n)
-                hn = n.__element_d
+                hn = n._element_d
                 i += hn.desc()+1
             else:
                 i += 1
@@ -346,8 +346,8 @@ class reliq():
         if self._isempty():
             return ""
 
-        if self.__element is not None:
-            return str(self.__element_d.all)
+        if self._element is not None:
+            return str(self._element_d.all)
 
         nodes = self.struct.struct.nodes
         nodesl = self.struct.struct.nodesl
@@ -362,14 +362,14 @@ class reliq():
     def tag(self) -> Optional[str]:
         if self.type() is not reliqType.tag:
             return None
-        return str(self.__element_d.tag)
+        return str(self._element_d.tag)
 
     def starttag(self) -> Optional[str]:
         if self.type() is not reliqType.tag:
             return None
         x = _reliq_cstr_struct()
         l = c_size_t()
-        x.b = libreliq.reliq_hnode_starttag(byref(self.__element_d),byref(l))
+        x.b = libreliq.reliq_hnode_starttag(byref(self._element_d),byref(l))
         x.s = l
         return str(x)
 
@@ -379,9 +379,9 @@ class reliq():
         x = _reliq_cstr_struct()
         l = c_size_t()
         if strip:
-            x.b = libreliq.reliq_hnode_endtag_strip(byref(self.__element_d),byref(l))
+            x.b = libreliq.reliq_hnode_endtag_strip(byref(self._element_d),byref(l))
         else:
-            x.b = libreliq.reliq_hnode_endtag(byref(self.__element_d),byref(l))
+            x.b = libreliq.reliq_hnode_endtag(byref(self._element_d),byref(l))
         if x.b == None:
             return None
         x.s = l
@@ -390,46 +390,46 @@ class reliq():
     def insides(self) -> Optional[str]:
         if self.type() not in reliqType.tag|reliqType.comment:
             return None
-        return str(self.__element_d.insides)
+        return str(self._element_d.insides)
 
     def desc(self) -> int: #count of descendants
         if self.type() is not reliqType.tag:
             return 0
-        return self.__element_d.desc()
+        return self._element_d.desc()
 
     def tag_count(self) -> int: #count of tags inside
         if self.type() is not reliqType.tag:
             return 0
-        return self.__element_d.tag_count
+        return self._element_d.tag_count
 
     def text_count(self) -> int: #count of text nodes inside
         if self.type() is not reliqType.tag:
             return 0
-        return self.__element_d.text_count
+        return self._element_d.text_count
 
     def comment_count(self) -> int: #count of comments inside
         if self.type() is not reliqType.tag:
             return 0
-        return self.__element_d.comment_count
+        return self._element_d.comment_count
 
     def lvl(self) -> int:
         if self.type() in reliqType.plural|reliqType.unknown:
             return 0
-        return self.__element_d.lvl
+        return self._element_d.lvl
 
     def attribsl(self) -> int:
         if self.type() is not reliqType.tag:
             return 0
-        return self.__element_d.attribsl
+        return self._element_d.attribsl
 
     def attribs(self) -> dict:
         if self.type() is not reliqType.tag:
             return {}
 
         ret = {}
-        length = self.__element_d.attribsl
+        length = self._element_d.attribsl
         i = 0
-        attr = self.__element_d.attribs
+        attr = self._element_d.attribs
 
         while i < length:
             a = _reliq_attrib_struct()
@@ -448,9 +448,9 @@ class reliq():
         return ret
 
     def type(self) -> reliqType:
-        if self.__element is None:
+        if self._element is None:
             return reliqType.plural
-        return self.__element_d.ntype()
+        return self._element_d.ntype()
 
     def text(self,recursive: bool=False) -> str:
         if self.struct is None:
@@ -530,11 +530,11 @@ class reliq():
         srcl = c_size_t()
 
         struct = self.struct.struct
-        if self.__element is not None:
+        if self._element is not None:
             struct = _reliq_struct()
             memmove(byref(struct),byref(self.struct.struct),sizeof(_reliq_struct))
-            struct.nodesl = self.__element_d.tag_count+self.__element_d.text_count+self.__element_d.comment_count+1
-            struct.nodes = self.__element
+            struct.nodesl = self._element_d.tag_count+self._element_d.text_count+self._element_d.comment_count+1
+            struct.nodes = self._element
 
         err = libreliq.reliq_exec_str(byref(struct),byref(src),byref(srcl),exprs)
 
@@ -562,26 +562,26 @@ class reliq():
         compressedl = c_size_t()
 
         struct = self.struct.struct
-        if self.__element is not None:
+        if self._element is not None:
             struct = _reliq_struct()
             memmove(byref(struct),byref(self.struct.struct),sizeof(_reliq_struct))
-            struct.nodesl = self.__element_d.tag_count+self.__element_d.text_count+self.__element_d.comment_count+1
-            struct.nodes = self.__element
+            struct.nodesl = self._element_d.tag_count+self._element_d.text_count+self._element_d.comment_count+1
+            struct.nodes = self._element
 
         err = libreliq.reliq_exec(byref(struct),byref(compressed),byref(compressedl),exprs)
 
         if compressed:
             if not err:
-                struct = None
+                nstruct = None
                 data = None
                 if independent:
-                    struct = reliq_struct(libreliq.reliq_from_compressed_independent(compressed,compressedl,byref(self.struct.struct)))
-                    data = reliq_str(struct.struct.data,struct.struct.datal)
+                    nstruct = reliq_struct(libreliq.reliq_from_compressed_independent(compressed,compressedl,byref(struct)))
+                    data = reliq_str(nstruct.struct.data,nstruct.struct.datal)
                 else:
-                    struct = reliq_struct(libreliq.reliq_from_compressed(compressed,compressedl,byref(self.struct.struct))) #!
+                    nstruct = reliq_struct(libreliq.reliq_from_compressed(compressed,compressedl,byref(struct)))
                     data = self.data
 
-                ret = reliq._init_copy(data,struct,None)
+                ret = reliq._init_copy(data,nstruct,None)
         else:
             ret = reliq(None)
 
