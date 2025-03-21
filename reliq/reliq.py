@@ -4,8 +4,9 @@
 
 import os
 from ctypes import *
-import ctypes.util
-from typing import Union,Optional
+#import ctypes.util
+import typing
+from typing import Optional, Tuple
 from enum import Flag, auto
 
 class ReliqError(Exception):
@@ -20,15 +21,16 @@ libreliq = CDLL(libreliq_path)
 #cstdlib = CDLL(ctypes.util.find_library("c"))
 
 class reliq_str():
-    def __init__(self,string: Union[str,bytes,c_void_p],size=0):
+    def __init__(self,string: str | bytes | c_void_p,size=0):
         if isinstance(string,str):
             string = string.encode("utf-8")
+
+        if isinstance(string,bytes) and size == 0:
+            size = len(string)
 
         self.string = string
         self.data = string
 
-        if isinstance(string,bytes) and size == 0:
-            size = len(self.data)
         self.size = size
 
     def __str__(self):
@@ -195,17 +197,18 @@ class reliqType(Flag):
     textall = textempty | texterr | text
 
 class reliq():
-    def __init__(self,html: Union['reliq',str,bytes,None]):
+    def __init__(self,html: Optional[typing.Union[str,bytes,'reliq']]):
+        self.data: Optional[reliq_str] = None
+        self.struct: Optional[reliq_struct] = None
+        self.__element: Optional[c_void_p] = None
+        self.__element_d: Optional[_reliq_hnode_struct] = None
+
         if isinstance(html,reliq):
             self.data = html.data
             self.struct = html.struct
             self.__element = html.__element
+            self.__element_d = html.__element_d
             return
-
-        self.data = None
-        self.struct = None
-        self.__element = None
-        self.__element_d = None
         if html is None:
             return
 
@@ -216,6 +219,7 @@ class reliq():
             raise reliq._create_error(err)
         self.struct = reliq_struct(rq)
 
+    @staticmethod
     def _init_copy(data: reliq_str,struct: reliq_struct,element: c_void_p) -> 'reliq':
         ret = reliq(None)
         ret.data = data
@@ -227,18 +231,18 @@ class reliq():
             ret.__element_d = chnode_conv(struct.struct,element)
         return ret
 
-    def _elnodes(self) -> [c_void_p,c_size_t]:
+    def _elnodes(self) -> Tuple[Optional[c_void_p],int]:
         if self.struct is None:
-            return [None,0]
+            return (None,0)
 
         nodesl = self.struct.struct.nodesl
         nodes = self.struct.struct.nodes
 
-        if self.__element is not None:
+        if self.__element is not None and self.__element_d is not None:
             nodes = self.__element
             nodesl = self.__element_d.desc()+1
 
-        return [nodes,nodesl]
+        return (nodes,nodesl)
 
     def __len__(self):
         if self.struct is None:
@@ -247,10 +251,17 @@ class reliq():
             return self.__element_d.desc()
         return self.struct.struct.nodesl
 
-    def __getitem__(self,item) -> Optional['reliq']:
+
+    def _isempty(self) -> bool:
         if self.struct is None:
+            return True
+        if self.data is None:
+            return True
+        return False
+
+    def __getitem__(self,item) -> 'reliq':
+        if self._isempty():
             raise IndexError("list index out of range")
-            return None
 
         nodes, nodesl = self._elnodes()
 
@@ -258,12 +269,11 @@ class reliq():
             item += 1
         if item >= nodesl:
             raise IndexError("list index out of range")
-            return None
 
         return reliq._init_copy(self.data,self.struct,nodes+item*chnode_sz)
 
     def full(self) -> list:
-        if self.struct is None:
+        if self._isempty():
             return []
 
         ret = []
@@ -277,7 +287,7 @@ class reliq():
         return ret
 
     def self(self) -> list:
-        if self.struct is None:
+        if self._isempty():
             return []
 
         ret = []
@@ -293,7 +303,7 @@ class reliq():
         return ret
 
     def children(self) -> list:
-        if self.struct is None:
+        if self._isempty():
             return []
 
         ret = []
@@ -317,7 +327,7 @@ class reliq():
         return ret
 
     def descendants(self) -> list:
-        if self.struct is None:
+        if self._isempty():
             return []
 
         ret = []
@@ -333,7 +343,7 @@ class reliq():
         return ret
 
     def __str__(self):
-        if self.struct is None:
+        if self._isempty():
             return ""
 
         if self.__element is not None:
@@ -442,7 +452,7 @@ class reliq():
             return reliqType.plural
         return self.__element_d.ntype()
 
-    def text(self,recursive=False) -> str:
+    def text(self,recursive: bool=False) -> str:
         if self.struct is None:
             return ""
 
@@ -466,7 +476,7 @@ class reliq():
         return ret
 
     @staticmethod
-    def decode(string: str|bytes) -> str:
+    def decode(string: str | bytes) -> str:
         if isinstance(string,str):
             string = string.encode("utf-8")
         src = c_void_p()
@@ -507,7 +517,7 @@ class reliq():
             if self.exprs is not None:
                 libreliq.reliq_efree(self.exprs)
 
-    def search(self,script: Union[str,"reliq.expr"]) -> Optional[str]:
+    def search(self,script: typing.Union[str,"reliq.expr"]) -> Optional[str]:
         if self.struct is None:
             return ""
 
@@ -539,7 +549,7 @@ class reliq():
             raise reliq._create_error(err)
         return ret
 
-    def filter(self,script: Union[str,"reliq.expr"],independent=False) -> "reliq":
+    def filter(self,script: typing.Union[str,"reliq.expr"],independent: bool=False) -> "reliq":
         if self.struct is None:
             return self
 
