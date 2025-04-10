@@ -17,7 +17,7 @@ A python module for [reliq](https://github.com/TUVIMEN/reliq) library.
 ## Usage
 
 ```python
-from reliq import reliq, ReliqError, reliqType
+from reliq import reliq
 
 html = ""
 with open('index.html','r') as f:
@@ -53,7 +53,7 @@ links = []
 for i in rq.filter(r'table; tr').self()[:-2]:
     #"i"
     #
-    #   A node has multiple types specified in reliqType flag
+    #   A node has multiple types specified in reliq.Type flag
     #   It can be a plural, tag, comment, text, textempty, texterr
     #   or textall which will match to all text types
 
@@ -68,13 +68,13 @@ for i in rq.filter(r'table; tr').self()[:-2]:
     #       lvl()           level in html structure
     #       attribsl()      number of attributes
     #       attribs()       returns dictionary of attributes
-    #       type()          returns instance of reliqType that describes the type of node
+    #       type()          returns instance of reliq.Type that describes the type of node
     #       starttag()      head of the tag
     #       endtag()        tail of the tag, if the first option is set to True result will be stripped
     #       text()          combined text nodes inside the node from the first level, if first option
     #                           is set to True all text nodes will be used
 
-    if i.type() is not reliqType.tag:
+    if i.type() is not reliq.Type.tag:
         continue
 
     if i.child_count() < 3 and i[0].tag() == "div" and i[0].starttag() == '<div>':
@@ -101,7 +101,7 @@ for i in rq.filter(r'table; tr').self()[:-2]:
 
 try: #handle errors
     reliq.search('p / /','<p></p>')
-except ReliqError:
+except reliq.ScriptError: # all errors inherit from reliq.Error
     print("error")
 
 #shows all the text nodes
@@ -111,7 +111,28 @@ print(rq[2].text())
 
 #decodes html entities
 reliq.decode('loop &amp; &lt &tdot; &#212')
+
+#convert to json
+rq.json(r"""
+    .files * #files; ( li )( span .head ); {
+        .type i class child@ | "%(class)v" / sed "s/^flaticon-//",
+        .name @ | "%Dt" / trim sed "s/ ([^)]* [a-zA-Z][Bb])$//",
+        .size @ | "%t" / sed 's/.* \(([^)]* [a-zA-Z][Bb])\)$/\1/; s/,//g; /^[0-9].* [a-zA-Z][bB]$/!d' "E"
+    } | ,
+""") #json format is not enforced, so incorrect script will raise exceptions from json.loads()
+
+#   These methods can return bytes() directly if raw=True argument is specified e.g. rq.decode(raw=True)
+#       tag()
+#       starttag()
+#       endtag()
+#       insides()
+#       attribs()
+#       text()
+#       decode()
+#       get_data()
+#       search()
 ```
+
 ## Projects using reliq in python
 
 - [forumscraper](https://github.com/TUVIMEN/forumscraper)
