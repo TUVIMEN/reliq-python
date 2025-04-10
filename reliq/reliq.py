@@ -9,14 +9,26 @@ import typing
 from typing import Optional, Tuple
 from enum import Flag, auto
 
-class ReliqError(Exception):
-    pass
+import json
 
 libreliq_name = 'libreliq.so'
 libreliq_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),libreliq_name)
 if not os.path.exists(libreliq_path):
     libreliq_path = libreliq_name
 libreliq = CDLL(libreliq_path)
+
+def strconv(string, raw: bool) -> str|bytes:
+    if isinstance(string,str):
+        if raw:
+            return string.encode('utf-8')
+        else:
+            return string
+    else:
+        string = bytes(string)
+        if raw:
+            return string
+        else:
+            return string.decode()
 
 #cstdlib = CDLL(ctypes.util.find_library("c"))
 
@@ -33,11 +45,14 @@ class reliq_str():
 
         self.size = size
 
-    def __str__(self):
+    def __bytes__(self):
         string = self.string
         if isinstance(string,c_void_p):
-            string = string_at(string,self.size).decode()
-        return string.decode()
+            string = string_at(string,self.size)
+        return string
+
+    def __str__(self):
+        return bytes(self).decode()
 
     def __del__(self):
         if isinstance(self.string,c_void_p):
@@ -70,23 +85,26 @@ class _reliq_hnode_struct(Structure):
     def desc(self) -> int:
         return self.tag_count+self.text_count+self.comment_count
 
-    def ntype(self) -> "reliqType":
+    def ntype(self) -> "reliq.Type":
         match self.type:
             case 0:
-                return reliqType.tag
+                return reliq.Type.tag
             case 1:
-                return reliqType.comment
+                return reliq.Type.comment
             case 2:
-                return reliqType.text
+                return reliq.Type.text
             case 3:
-                return reliqType.textempty
+                return reliq.Type.textempty
             case 4:
-                return reliqType.texterr
+                return reliq.Type.texterr
 
-        return reliqType.unknown
+        return reliq.Type.unknown
+
+    def __bytes__(self):
+        return string_at(self.all.b,self.all.s)
 
     def __str__(self):
-        return string_at(self.all.b,self.all.s).decode()
+        return bytes(self).decode()
 
 class _reliq_error_struct(Structure):
     _fields_ = [('msg',c_char*512),('code',c_int)]
@@ -186,16 +204,6 @@ class reliq_struct():
     def __del__(self):
         libreliq.reliq_free(byref(self.struct))
 
-class reliqType(Flag):
-    plural = auto()
-    tag = auto()
-    textempty = auto()
-    texterr = auto()
-    text = auto()
-    comment = auto()
-    unknown = auto()
-    textall = textempty | texterr | text
-
 class reliq():
     def __init__(self,html: Optional[typing.Union[str,bytes,'reliq']]):
         self.data: Optional[reliq_str] = None
@@ -218,6 +226,51 @@ class reliq():
         if err:
             raise reliq._create_error(err)
         self.struct = reliq_struct(rq)
+
+    class expr():
+        def __init__(self,script: str|bytes):
+            self.exprs = None
+            s = script
+            if isinstance(script,str):
+                s = script.encode("utf-8")
+
+            exprs = c_void_p()
+            err = libreliq.reliq_ecomp(cast(s,c_void_p),len(s),byref(exprs))
+            if err:
+                raise reliq._create_error(err)
+
+            self.exprs = exprs
+
+        def _extract(self):
+            return self.exprs
+
+        def __del__(self):
+            if self.exprs is not None:
+                libreliq.reliq_efree(self.exprs)
+
+    class Type(Flag):
+        plural = auto()
+        tag = auto()
+        textempty = auto()
+        texterr = auto()
+        text = auto()
+        comment = auto()
+        unknown = auto()
+        textall = textempty | texterr | text
+
+
+    class Error(Exception):
+        pass
+
+    class ScriptError(Error):
+        pass
+
+    class HtmlError(Error):
+        pass
+
+    class SystemError(Error):
+        pass
+
 
     @staticmethod
     def _init_copy(data: reliq_str,struct: reliq_struct,element: c_void_p) -> 'reliq':
@@ -272,7 +325,7 @@ class reliq():
 
         return reliq._init_copy(self.data,self.struct,nodes+item*chnode_sz)
 
-    def full(self) -> list:
+    def full(self) -> list['reliq']:
         if self._isempty():
             return []
 
@@ -286,7 +339,7 @@ class reliq():
 
         return ret
 
-    def self(self) -> list:
+    def self(self) -> list['reliq']:
         if self._isempty():
             return []
 
@@ -302,7 +355,7 @@ class reliq():
 
         return ret
 
-    def children(self) -> list:
+    def children(self) -> list['reliq']:
         if self._isempty():
             return []
 
@@ -326,7 +379,7 @@ class reliq():
 
         return ret
 
-    def descendants(self) -> list:
+    def descendants(self) -> list['reliq']:
         if self._isempty():
             return []
 
@@ -342,39 +395,43 @@ class reliq():
 
         return ret
 
-    def __str__(self):
+    def __bytes__(self):
         if self._isempty():
-            return ""
+            return b""
 
         if self._element is not None:
-            return str(self._element_d.all)
+            return bytes(self._element_d.all)
 
         nodes = self.struct.struct.nodes
         nodesl = self.struct.struct.nodesl
-        ret = ""
+        ret = b""
         i = 0
         while i < nodesl:
             hn = chnode_conv(self.struct.struct,nodes+i*chnode_sz)
-            ret += str(hn)
+            ret += bytes(hn)
             i += hn.desc()+1
         return ret
 
-    def tag(self) -> Optional[str]:
-        if self.type() is not reliqType.tag:
-            return None
-        return str(self._element_d.tag)
+    def __str__(self):
+        return bytes(self).decode()
 
-    def starttag(self) -> Optional[str]:
-        if self.type() is not reliqType.tag:
+    def tag(self, raw: bool=False) -> Optional[str|bytes]:
+        if self.type() is not reliq.Type.tag:
             return None
+        return strconv(self._element_d.tag,raw)
+
+    def starttag(self, raw: bool=False) -> Optional[str|bytes]:
+        if self.type() is not reliq.Type.tag:
+            return None
+
         x = _reliq_cstr_struct()
         l = c_size_t()
         x.b = libreliq.reliq_hnode_starttag(byref(self._element_d),byref(l))
         x.s = l
-        return str(x)
+        return strconv(x,raw)
 
-    def endtag(self, strip=False) -> Optional[str]:
-        if self.type() is not reliqType.tag:
+    def endtag(self, strip=False, raw: bool=False) -> Optional[str|bytes]:
+        if self.type() is not reliq.Type.tag:
             return None
         x = _reliq_cstr_struct()
         l = c_size_t()
@@ -382,48 +439,48 @@ class reliq():
             x.b = libreliq.reliq_hnode_endtag_strip(byref(self._element_d),byref(l))
         else:
             x.b = libreliq.reliq_hnode_endtag(byref(self._element_d),byref(l))
-        if x.b == None:
+        if x.b is None:
             return None
         x.s = l
-        return str(x)
+        return strconv(x,raw)
 
-    def insides(self) -> Optional[str]:
-        if self.type() not in reliqType.tag|reliqType.comment:
+    def insides(self, raw: bool=False) -> Optional[str|bytes]:
+        if self.type() not in reliq.Type.tag|reliq.Type.comment:
             return None
-        return str(self._element_d.insides)
+        return strconv(self._element_d.insides,raw)
 
     def desc(self) -> int: #count of descendants
-        if self.type() is not reliqType.tag:
+        if self.type() is not reliq.Type.tag:
             return 0
         return self._element_d.desc()
 
     def tag_count(self) -> int: #count of tags inside
-        if self.type() is not reliqType.tag:
+        if self.type() is not reliq.Type.tag:
             return 0
         return self._element_d.tag_count
 
     def text_count(self) -> int: #count of text nodes inside
-        if self.type() is not reliqType.tag:
+        if self.type() is not reliq.Type.tag:
             return 0
         return self._element_d.text_count
 
     def comment_count(self) -> int: #count of comments inside
-        if self.type() is not reliqType.tag:
+        if self.type() is not reliq.Type.tag:
             return 0
         return self._element_d.comment_count
 
     def lvl(self) -> int:
-        if self.type() in reliqType.plural|reliqType.unknown:
+        if self.type() in reliq.Type.plural|reliq.Type.unknown:
             return 0
         return self._element_d.lvl
 
     def attribsl(self) -> int:
-        if self.type() is not reliqType.tag:
+        if self.type() is not reliq.Type.tag:
             return 0
         return self._element_d.attribsl
 
-    def attribs(self) -> dict:
-        if self.type() is not reliqType.tag:
+    def attribs(self, raw: bool=False) -> dict:
+        if self.type() is not reliq.Type.tag:
             return {}
 
         ret = {}
@@ -431,32 +488,36 @@ class reliq():
         i = 0
         attr = self._element_d.attribs
 
+        conv = lambda x: strconv(x,raw)
+        value_separator = conv(" ")
+
         while i < length:
             a = _reliq_attrib_struct()
             libreliq.reliq_cattrib_conv(byref(self.struct.struct),attr+i*cattrib_sz,byref(a))
 
-            key = str(a.key)
-            t = ""
+            key = conv(a.key)
+            t = conv('')
             prev = ret.get(key)
             if prev is not None:
                 t += ret.get(key)
             if len(t) > 0:
-                t += " "
-            t += str(a.value)
+                t += value_separator
+            t += conv(a.value)
             ret[key] = t
             i += 1
         return ret
 
-    def type(self) -> reliqType:
+    def type(self) -> Type:
         if self._element is None:
-            return reliqType.plural
+            return reliq.Type.plural
         return self._element_d.ntype()
 
-    def text(self,recursive: bool=False) -> str:
+    def text(self,recursive: bool=False, raw: bool=False) -> str|bytes:
+        conv = lambda x: strconv(x,raw)
+        ret = conv('')
         if self.struct is None:
-            return ""
+            return ret
 
-        ret = ""
         nodes, nodesl = self._elnodes()
         i = 0
         lvl = -1
@@ -465,8 +526,8 @@ class reliq():
             if lvl == -1:
                 lvl = hn.lvl
 
-            if hn.ntype() in reliqType.textall:
-                ret += str(hn)
+            if hn.ntype() in reliq.Type.textall:
+                ret += conv(hn)
 
             if not recursive and hn.lvl == lvl+1:
                 i += hn.desc()+1
@@ -476,50 +537,45 @@ class reliq():
         return ret
 
     @staticmethod
-    def decode(string: str | bytes) -> str:
+    def decode(string: str|bytes, raw: bool=False) -> str|bytes:
         if isinstance(string,str):
             string = string.encode("utf-8")
         src = c_void_p()
         srcl = c_size_t()
 
         libreliq.reliq_decode_entities_str(cast(string,c_void_p),len(string),byref(src),byref(srcl))
-        ret = string_at(src,srcl.value).decode()
+        ret = string_at(src,srcl.value)
         libreliq.reliq_std_free(src,0)
-        return ret
 
+        return strconv(ret,raw)
 
-    def get_data(self) -> str:
-        return str(self.data)
+    def get_data(self, raw: bool=False) -> bytes:
+        return strconv(self.data,raw)
 
     @staticmethod
     def _create_error(err: POINTER(_reliq_error_struct)):
         p_err = err.contents
-        ret = ReliqError('failed {}: {}'.format(p_err.code,p_err.msg.decode()))
+        msg = p_err.msg.decode()
+        code = p_err.code
+        errmsg = 'failed {}: {}'.format(code,msg)
+
+        if code == 5:
+            ret = reliq.SystemError(errmsg)
+        elif code == 10:
+            ret = reliq.HtmlError(errmsg)
+        elif code == 15:
+            ret = reliq.ScriptError(errmsg)
+        else:
+            ret = reliq.Error(errmsg)
+
         libreliq.reliq_std_free(err,0)
         return ret
 
-    class expr():
-        def __init__(self,script: str):
-            self.exprs = None
-            s = script.encode("utf-8")
-
-            exprs = c_void_p()
-            err = libreliq.reliq_ecomp(cast(s,c_void_p),len(s),byref(exprs))
-            if err:
-                raise reliq._create_error(err)
-                exprs = None
-            self.exprs = exprs
-
-        def _extract(self):
-            return self.exprs
-
-        def __del__(self):
-            if self.exprs is not None:
-                libreliq.reliq_efree(self.exprs)
-
-    def search(self,script: typing.Union[str,"reliq.expr"]) -> Optional[str]:
+    def search(self, script: typing.Union[str,bytes,"reliq.expr"], raw: bool=False) -> str|bytes:
+        conv = lambda x: strconv(x,raw)
+        ret = conv('')
         if self.struct is None:
-            return ""
+            return ret
 
         e = script
         if not isinstance(script,reliq.expr):
@@ -538,18 +594,16 @@ class reliq():
 
         err = libreliq.reliq_exec_str(byref(struct),byref(src),byref(srcl),exprs)
 
-        ret = ""
-
         if src:
             if not err:
-                ret = string_at(src,srcl.value).decode()
+                ret = conv(string_at(src,srcl.value))
             libreliq.reliq_std_free(src,0)
 
         if err:
             raise reliq._create_error(err)
         return ret
 
-    def filter(self,script: typing.Union[str,"reliq.expr"],independent: bool=False) -> "reliq":
+    def filter(self,script: typing.Union[str,bytes,"reliq.expr"],independent: bool=False) -> "reliq":
         if self.struct is None:
             return self
 
