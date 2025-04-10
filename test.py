@@ -89,8 +89,15 @@ assert x[0].starttag() == "<ul>"
 assert x[0].endtag() == "</ul>"
 assert x[0].endtag(True) == "/ul"
 
+assert x[0].starttag(raw=True) == b"<ul>"
+assert x[0].endtag(raw=True) == b"</ul>"
+assert x[0].endtag(True,raw=True) == b"/ul"
+
 t = x[1].attribs()
 assert len(t.keys()) == 1 or t['href'] != '/index.html'
+
+t = x[1].attribs(raw=True)
+assert len(t.keys()) == 1 or t[b'href'] != b'/index.html'
 
 assert x[1].attribsl() == 1
 
@@ -104,19 +111,27 @@ assert x[1].lvl() == 1
 assert x[1].insides() == "<li>🏡 Home</li>"
 assert x[1].tag() == "a"
 
-assert rq[0].type() in reliqType.comment
-assert rq[1].type() in reliqType.tag
-assert rq[2].type() in reliqType.textempty
-assert rq[2].type() in reliqType.textall
-assert rq[2].type() not in reliqType.text
+assert x[1].insides(raw=True) == b"<li>\xf0\x9f\x8f\xa1 Home</li>"
+assert x[1].tag(raw=True) == b"a"
+
+assert rq[0].type() in reliq.Type.comment
+assert rq[1].type() in reliq.Type.tag
+assert rq[2].type() in reliq.Type.textempty
+assert rq[2].type() in reliq.Type.textall
+assert rq[2].type() not in reliq.Type.text
 
 assert rq[0].insides() == "DOCTYPE HTML"
-
 assert rq[2].insides() == None
+
+assert rq[0].insides(raw=True) == b"DOCTYPE HTML"
+assert rq[2].insides(raw=True) == None
 
 x = rq.filter('ul',True)
 assert x[0][0].insides() == "<li>🏡 Home</li>"
 assert x[1].attribs()['href'] == '/index.html'
+
+assert x[0][0].insides(raw=True) == b"<li>\xf0\x9f\x8f\xa1 Home</li>"
+assert x[1].attribs(raw=True)[b'href'] == b'/index.html'
 
 assert len(x[0].children()) == 9
 assert len(x[0].self()) == 1
@@ -131,8 +146,31 @@ assert len(rq[1]) == 288
 assert x[2].text() == "🏡 Home"
 assert x[3].text() == "🏡 Home"
 
+assert x[2].text(raw=True) == b"\xf0\x9f\x8f\xa1 Home"
+assert x[3].text(raw=True) == b"\xf0\x9f\x8f\xa1 Home"
+
 assert rq[253].text() == "BTC: () bc1qw5w6pxsk3aj324tmqrhhpmpfprxcfxe6qhetuv"
 assert rq[253].text(True) == "BTC: (QR) bc1qw5w6pxsk3aj324tmqrhhpmpfprxcfxe6qhetuv"
 assert len(rq[1].text(True)) == 2117
 
+assert rq[253].text(raw=True) == b"BTC: () bc1qw5w6pxsk3aj324tmqrhhpmpfprxcfxe6qhetuv"
+assert rq[253].text(True,raw=True) == b"BTC: (QR) bc1qw5w6pxsk3aj324tmqrhhpmpfprxcfxe6qhetuv"
+
 assert reliq.decode('loop &amp; &lt &tdot; &#212') == "loop & <  ⃛⃛ Ô"
+assert reliq.decode('loop &amp; &lt &tdot; &#212',raw=True) == b"loop & <  \xe2\x83\x9b\xe2\x83\x9b \xc3\x94"
+
+reliq.expr('li')
+reliq.expr(b'li')
+
+try:
+    reliq.expr('li @self')
+except reliq.ScriptError as e:
+    pass
+else:
+    assert False
+
+assert rq.search(r'ul; [0] img | "%(src)v"') == "pix/git.svg"
+assert rq.search(rb'ul; [0] img | "%(src)v"') == "pix/git.svg"
+assert rq.search(r'ul; [0] img | "%(src)v"',raw=True) == b"pix/git.svg"
+
+assert rq.json('.r a c@[0]; { .name @ | "%Di" trim, .link @ | "%(href)v" } |')['r'][18]['link'] == 'pix/xmr.png'
