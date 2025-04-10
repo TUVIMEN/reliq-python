@@ -603,6 +603,9 @@ class reliq():
             raise reliq._create_error(err)
         return ret
 
+    def json(self, script: typing.Union[str,bytes,"reliq.expr"]) -> dict:
+        return json.loads(self.search(script,raw=True))
+
     def filter(self,script: typing.Union[str,bytes,"reliq.expr"],independent: bool=False) -> "reliq":
         if self.struct is None:
             return self
