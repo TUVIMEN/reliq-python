@@ -10,6 +10,7 @@ from typing import Optional, Tuple
 from enum import Flag, auto
 
 import json
+from pathlib import Path
 
 libreliq_name = 'libreliq.so'
 libreliq_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),libreliq_name)
@@ -241,6 +242,12 @@ class reliq():
 
             self.exprs = exprs
 
+        @classmethod
+        def file(cls, filepath):
+            path = Path(filepath)
+            return cls(path.read_bytes())
+
+
         def _extract(self):
             return self.exprs
 
@@ -272,9 +279,9 @@ class reliq():
         pass
 
 
-    @staticmethod
-    def _init_copy(data: reliq_str,struct: reliq_struct,element: c_void_p) -> 'reliq':
-        ret = reliq(None)
+    @classmethod
+    def _init_copy(cls, data: reliq_str,struct: reliq_struct,element: c_void_p) -> 'reliq':
+        ret = cls(None)
         ret.data = data
         ret.struct = struct
         ret._element = element
