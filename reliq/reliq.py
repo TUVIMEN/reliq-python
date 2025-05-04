@@ -68,6 +68,9 @@ class _reliq_cstr_struct(Structure):
     def __str__(self):
         return bytes(self).decode()
 
+class _reliq_str_struct(_reliq_cstr_struct):
+    pass
+
 class _reliq_attrib_struct(Structure):
     _fields_ = [('key',_reliq_cstr_struct),('value',_reliq_cstr_struct)]
 
@@ -110,8 +113,19 @@ class _reliq_hnode_struct(Structure):
 class _reliq_error_struct(Structure):
     _fields_ = [('msg',c_char*512),('code',c_int)]
 
+class _reliq_url_struct(Structure):
+    _fields_ = [('url',_reliq_str_struct),
+                ('scheme',_reliq_cstr_struct),
+                ('netloc',_reliq_cstr_struct),
+                ('path',_reliq_cstr_struct),
+                ('params',_reliq_cstr_struct),
+                ('query',_reliq_cstr_struct),
+                ('fragment',_reliq_cstr_struct),
+                ('allocated',c_size_t)]
+
 class _reliq_struct(Structure):
-    _fields_ = [('freedata',c_void_p),
+    _fields_ = [('url',_reliq_url_struct),
+                ('freedata',c_void_p),
                 ('data',c_void_p),
                 ('nodes',c_void_p),
                 ('attribs',c_void_p),
