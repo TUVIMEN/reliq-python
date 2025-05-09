@@ -85,45 +85,45 @@ assert len(x.children()) == 48
 assert len(x.descendants()) == 152
 assert len(x.full()) == 156
 
-assert x[0].starttag() == "<ul>"
-assert x[0].endtag() == "</ul>"
-assert x[0].endtag(True) == "/ul"
+assert x[0].starttag == "<ul>"
+assert x[0].endtag == "</ul>"
+assert x[0].endtag_strip == "/ul"
 
-assert x[0].starttag(raw=True) == b"<ul>"
-assert x[0].endtag(raw=True) == b"</ul>"
-assert x[0].endtag(True,raw=True) == b"/ul"
+assert x[0].starttag_raw == b"<ul>"
+assert x[0].endtag_raw == b"</ul>"
+assert x[0].endtag_strip_raw == b"/ul"
 
-t = x[1].attribs()
+t = x[1].attribs
 assert len(t.keys()) == 1 or t['href'] != '/index.html'
 
-t = x[1].attribs(raw=True)
+t = x[1].attribs_raw
 assert len(t.keys()) == 1 or t[b'href'] != b'/index.html'
 
-assert x[1].attribsl() == 1
+assert x[1].attribsl == 1
 
-assert rq[1].text_count() == 139
-assert rq[1].tag_count() == 147
-assert rq[1].comment_count() == 2
-assert rq[1].desc() == 288
-assert rq[1].lvl() == 0
-assert rq[3].position() == 3
-assert rq[3].rposition() == 3
-assert x[1].rlvl() == 1
-assert x[1].lvl() == 4
-assert x[5].rposition() == 5
-assert x[5].position() == 33
+assert rq[1].text_count == 139
+assert rq[1].tag_count == 147
+assert rq[1].comment_count == 2
+assert rq[1].desc == 288
+assert rq[1].lvl == 0
+assert rq[3].position == 3
+assert rq[3].rposition == 3
+assert x[1].rlvl == 1
+assert x[1].lvl == 4
+assert x[5].rposition == 5
+assert x[5].position == 33
 
 assert x[1].insides() == "<li>🏡 Home</li>"
-assert x[1].tag() == "a"
+assert x[1].tag == "a"
 
 assert x[1].insides(raw=True) == b"<li>\xf0\x9f\x8f\xa1 Home</li>"
-assert x[1].tag(raw=True) == b"a"
+assert x[1].tag_raw == b"a"
 
-assert rq[0].type() in reliq.Type.comment
-assert rq[1].type() in reliq.Type.tag
-assert rq[2].type() in reliq.Type.textempty
-assert rq[2].type() in reliq.Type.textall
-assert rq[2].type() not in reliq.Type.text
+assert rq[0].type in reliq.Type.comment
+assert rq[1].type in reliq.Type.tag
+assert rq[2].type in reliq.Type.textempty
+assert rq[2].type in reliq.Type.textall
+assert rq[2].type not in reliq.Type.text
 
 assert rq[0].insides() == "DOCTYPE HTML"
 assert rq[2].insides() == None
@@ -133,10 +133,10 @@ assert rq[2].insides(raw=True) == None
 
 x = rq.filter('ul',True)
 assert x[0][0].insides() == "<li>🏡 Home</li>"
-assert x[1].attribs()['href'] == '/index.html'
+assert x[1].attribs['href'] == '/index.html'
 
 assert x[0][0].insides(raw=True) == b"<li>\xf0\x9f\x8f\xa1 Home</li>"
-assert x[1].attribs(raw=True)[b'href'] == b'/index.html'
+assert x[1].attribs_raw[b'href'] == b'/index.html'
 
 assert len(x[0].children()) == 9
 assert len(x[0].self()) == 1
@@ -153,18 +153,18 @@ assert len(y.filter('.n img').self()) == 4
 assert len(y.children()) == 13
 assert y.search('.x [0] img | "%(src)v", .y text@ RSS') == '{"x":"pix/git.svg","y":" RSS\\n"}'
 
-assert x[2].text() == "🏡 Home"
-assert x[3].text() == "🏡 Home"
+assert x[2].text == "🏡 Home"
+assert x[3].text == "🏡 Home"
 
-assert x[2].text(raw=True) == b"\xf0\x9f\x8f\xa1 Home"
-assert x[3].text(raw=True) == b"\xf0\x9f\x8f\xa1 Home"
+assert x[2].text_raw == b"\xf0\x9f\x8f\xa1 Home"
+assert x[3].text_raw == b"\xf0\x9f\x8f\xa1 Home"
 
-assert rq[253].text() == "BTC: () bc1qw5w6pxsk3aj324tmqrhhpmpfprxcfxe6qhetuv"
-assert rq[253].text(True) == "BTC: (QR) bc1qw5w6pxsk3aj324tmqrhhpmpfprxcfxe6qhetuv"
-assert len(rq[1].text(True)) == 2117
+assert rq[253].text == "BTC: () bc1qw5w6pxsk3aj324tmqrhhpmpfprxcfxe6qhetuv"
+assert rq[253].text_recursive == "BTC: (QR) bc1qw5w6pxsk3aj324tmqrhhpmpfprxcfxe6qhetuv"
+assert len(rq[1].text_recursive) == 2117
 
-assert rq[253].text(raw=True) == b"BTC: () bc1qw5w6pxsk3aj324tmqrhhpmpfprxcfxe6qhetuv"
-assert rq[253].text(True,raw=True) == b"BTC: (QR) bc1qw5w6pxsk3aj324tmqrhhpmpfprxcfxe6qhetuv"
+assert rq[253].text_raw == b"BTC: () bc1qw5w6pxsk3aj324tmqrhhpmpfprxcfxe6qhetuv"
+assert rq[253].text_recurive_raw == b"BTC: (QR) bc1qw5w6pxsk3aj324tmqrhhpmpfprxcfxe6qhetuv"
 
 assert reliq.decode('loop &amp; &lt &tdot; &#212') == "loop & <  ⃛⃛ Ô"
 assert reliq.decode('loop &amp; &lt &tdot; &#212',raw=True) == b"loop & <  \xe2\x83\x9b\xe2\x83\x9b \xc3\x94"

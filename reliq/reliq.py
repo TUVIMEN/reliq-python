@@ -128,9 +128,11 @@ class _reliq_hnode_struct(Structure):
                 ('lvl',c_uint16),
                 ('type',c_uint8)]
 
+    @property
     def desc(self) -> int:
         return self.tag_count+self.text_count+self.comment_count
 
+    @property
     def ntype(self) -> "reliq.Type":
         match self.type:
             case 0:
@@ -365,7 +367,7 @@ class reliq():
 
                 nodes = self.struct.struct.nodes+c.hnode*chnode_sz
                 hn = chnode_conv(self.struct.struct,nodes)
-                nodesl = hn.desc()+1
+                nodesl = hn.desc+1
                 parent = nodes
                 if c.parent != UINT32_MAX:
                     parent = c.parent+self.struct.struct.nodes
@@ -377,7 +379,7 @@ class reliq():
         if self.single is not None:
             nodes = self.single.chnode
             hn = self.single.hnode
-            nodesl = hn.desc()+1
+            nodesl = hn.desc+1
             return [(nodes,nodesl,hn.lvl,self.single.cparent)]
 
         nodesl = self.struct.struct.nodesl
@@ -388,7 +390,7 @@ class reliq():
         if self.struct is None:
             return 0
         if self.single is not None:
-            return self.single.hnode.desc()
+            return self.single.hnode.desc
         return self.struct.struct.nodesl
 
 
@@ -443,7 +445,7 @@ class reliq():
                 n = reliq._init_single(self.data,self.struct,nodes+i*chnode_sz,parent)
                 ret.append(n)
                 hn = n.single.hnode
-                i += hn.desc()+1
+                i += hn.desc+1
             return ret
         return self._axis(from_nodes)
 
@@ -459,7 +461,7 @@ class reliq():
                 if hn.lvl == lvl:
                     n = reliq._init_single(self.data,self.struct,node,parent)
                     ret.append(n)
-                    i += hn.desc()+1
+                    i += hn.desc+1
                 else:
                     i += 1
             return ret
@@ -512,19 +514,27 @@ class reliq():
         while i < nodesl:
             hn = chnode_conv(self.struct.struct,nodes+i*chnode_sz)
             ret += bytes(hn)
-            i += hn.desc()+1
+            i += hn.desc+1
         return ret
 
     def __str__(self):
         return bytes(self).decode()
 
-    def tag(self, raw: bool=False) -> Optional[str|bytes]:
-        if self.type() is not reliq.Type.tag:
+    def _tag(self, raw: bool=False) -> Optional[str|bytes]:
+        if self.type is not reliq.Type.tag:
             return None
         return strconv(self.single.hnode.tag,raw)
 
-    def starttag(self, raw: bool=False) -> Optional[str|bytes]:
-        if self.type() is not reliq.Type.tag:
+    @property
+    def tag_raw(self) -> Optional[bytes]:
+        return self._tag(True)
+
+    @property
+    def tag(self) -> Optional[str]:
+        return self._tag()
+
+    def _starttag(self, raw: bool=False) -> Optional[str|bytes]:
+        if self.type is not reliq.Type.tag:
             return None
 
         x = _reliq_cstr_struct()
@@ -533,8 +543,16 @@ class reliq():
         x.s = l
         return strconv(x,raw)
 
-    def endtag(self, strip=False, raw: bool=False) -> Optional[str|bytes]:
-        if self.type() is not reliq.Type.tag:
+    @property
+    def starttag_raw(self) -> Optional[bytes]:
+        return self._starttag(True)
+
+    @property
+    def starttag(self) -> Optional[str]:
+        return self._starttag()
+
+    def _endtag(self, strip=False, raw: bool=False) -> Optional[str|bytes]:
+        if self.type is not reliq.Type.tag:
             return None
         x = _reliq_cstr_struct()
         l = c_size_t()
@@ -547,64 +565,89 @@ class reliq():
         x.s = l
         return strconv(x,raw)
 
+    @property
+    def endtag_raw(self) -> Optional[bytes]:
+        return self._endtag(raw=True)
+
+    @property
+    def endtag_strip(self) -> Optional[bytes]:
+        return self._endtag(strip=True)
+
+    @property
+    def endtag_strip_raw(self) -> Optional[bytes]:
+        return self._endtag(strip=True,raw=True)
+
+    @property
+    def endtag(self) -> Optional[str]:
+        return self._endtag()
+
     def insides(self, raw: bool=False) -> Optional[str|bytes]:
-        if self.type() not in reliq.Type.tag|reliq.Type.comment:
+        if self.type not in reliq.Type.tag|reliq.Type.comment:
             return None
         return strconv(self.single.hnode.insides,raw)
 
+    @property
     def desc(self) -> int: #count of descendants
-        if self.type() is not reliq.Type.tag:
+        if self.type is not reliq.Type.tag:
             return 0
-        return self.single.hnode.desc()
+        return self.single.hnode.desc
 
+    @property
     def tag_count(self) -> int: #count of tags inside
-        if self.type() is not reliq.Type.tag:
+        if self.type is not reliq.Type.tag:
             return 0
         return self.single.hnode.tag_count
 
+    @property
     def text_count(self) -> int: #count of text nodes inside
-        if self.type() is not reliq.Type.tag:
+        if self.type is not reliq.Type.tag:
             return 0
         return self.single.hnode.text_count
 
+    @property
     def comment_count(self) -> int: #count of comments inside
-        if self.type() is not reliq.Type.tag:
+        if self.type is not reliq.Type.tag:
             return 0
         return self.single.hnode.comment_count
 
+    @property
     def lvl(self) -> int:
-        if self.type() not in reliq.Type.single:
+        if self.type not in reliq.Type.single:
             return 0
         return self.single.hnode.lvl
 
+    @property
     def rlvl(self) -> int:
-        if self.type() not in reliq.Type.single:
+        if self.type not in reliq.Type.single:
             return 0
         parent = self.single.parent
         if parent is None:
             return self.single.hnode.lvl
         return self.single.hnode.lvl-parent.lvl
 
+    @property
     def position(self) -> int:
-        if self.type() not in reliq.Type.single:
+        if self.type not in reliq.Type.single:
             return 0
         return (self.single.chnode-self.struct.struct.nodes)//chnode_sz
 
+    @property
     def rposition(self) -> int:
-        if self.type() not in reliq.Type.single:
+        if self.type not in reliq.Type.single:
             return 0
         parent = self.single.cparent
         if parent is None:
             return (self.single.chnode-self.struct.struct.nodes)//chnode_sz
         return (self.single.chnode-parent)//chnode_sz
 
+    @property
     def attribsl(self) -> int:
-        if self.type() is not reliq.Type.tag:
+        if self.type is not reliq.Type.tag:
             return 0
         return self.single.hnode.attribsl
 
-    def attribs(self, raw: bool=False) -> dict:
-        if self.type() is not reliq.Type.tag:
+    def _attribs(self, raw: bool=False) -> dict:
+        if self.type is not reliq.Type.tag:
             return {}
 
         ret = {}
@@ -631,15 +674,24 @@ class reliq():
             i += 1
         return ret
 
+    @property
+    def attribs(self) -> dict:
+        return self._attribs()
+
+    @property
+    def attribs_raw(self) -> dict:
+        return self._attribs(True)
+
+    @property
     def type(self) -> Type:
         if self.compressed is not None:
             return reliq.Type.plural_compressed
         if self.single is None:
             return reliq.Type.plural_empty
 
-        return self.single.hnode.ntype()
+        return self.single.hnode.ntype
 
-    def text(self,recursive: bool=False, raw: bool=False) -> str|bytes:
+    def _text(self,recursive: bool=False, raw: bool=False) -> str|bytes:
         conv = lambda x: strconv(x,raw)
         ret = conv('')
         if self.struct is None:
@@ -653,15 +705,31 @@ class reliq():
                 if lvl == -1:
                     lvl = hn.lvl
 
-                if hn.ntype() in reliq.Type.textall:
+                if hn.ntype in reliq.Type.textall:
                     ret += conv(hn)
 
                 if not recursive and hn.lvl == lvl+1:
-                    i += hn.desc()+1
+                    i += hn.desc+1
                 else:
                     i += 1
 
         return ret
+
+    @property
+    def text(self):
+        return self._text()
+
+    @property
+    def text_raw(self):
+        return self._text(raw=True)
+
+    @property
+    def text_recursive(self):
+        return self._text(recursive=True)
+
+    @property
+    def text_recurive_raw(self):
+        return self._text(recursive=True,raw=True)
 
     @staticmethod
     def decode(string: str|bytes, raw: bool=False) -> str|bytes:
@@ -716,7 +784,7 @@ class reliq():
         if self.single is not None:
             struct = _reliq_struct()
             memmove(byref(struct),byref(self.struct.struct),sizeof(_reliq_struct))
-            struct.nodesl = self.single.hnode.desc()+1
+            struct.nodesl = self.single.hnode.desc+1
             struct.nodes = self.single.chnode
 
         input = None
