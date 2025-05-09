@@ -20,7 +20,7 @@ libreliq = CDLL(libreliq_path)
 
 c_uintptr = c_uint64 if sizeof(c_void_p) == 8 else c_uint32
 
-MAX_UINT32 = 4294967295 # (uint32_t)-1
+UINT32_MAX = 4294967295 # (uint32_t)-1
 
 def strconv(string, raw: bool) -> str|bytes:
     if isinstance(string,str):
@@ -358,12 +358,17 @@ class reliq():
             ret = []
 
             while i < l:
-                nodes = self.struct.struct.nodes+compressed[i].hnode*chnode_sz
+                c = compressed[i]
+                if c.hnode >= UINT32_MAX-6:
+                    i += 1
+                    continue
+
+                nodes = self.struct.struct.nodes+c.hnode*chnode_sz
                 hn = chnode_conv(self.struct.struct,nodes)
                 nodesl = hn.desc()+1
                 parent = nodes
-                if compressed[i].parent != MAX_UINT32:
-                    parent = compressed[i].parent+self.struct.struct.nodes
+                if c.parent != UINT32_MAX:
+                    parent = c.parent+self.struct.struct.nodes
 
                 ret.append((nodes,nodesl,hn.lvl,parent))
                 i += 1

@@ -144,6 +144,9 @@ assert len(x[2]) == 1
 assert len(rq[0]) == 0
 assert len(rq[1]) == 288
 
+y = x[0].filter('li')
+assert len(y.filter('.n [0] img').self()) == 1
+
 assert x[2].text() == "🏡 Home"
 assert x[3].text() == "🏡 Home"
 
