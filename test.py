@@ -106,8 +106,12 @@ assert rq[1].tag_count() == 147
 assert rq[1].comment_count() == 2
 assert rq[1].desc() == 288
 assert rq[1].lvl() == 0
+assert rq[3].position() == 3
+assert rq[3].rposition() == 3
 assert x[1].rlvl() == 1
 assert x[1].lvl() == 4
+assert x[5].rposition() == 5
+assert x[5].position() == 33
 
 assert x[1].insides() == "<li>🏡 Home</li>"
 assert x[1].tag() == "a"

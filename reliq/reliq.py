@@ -585,6 +585,19 @@ class reliq():
             return self.single.hnode.lvl
         return self.single.hnode.lvl-parent.lvl
 
+    def position(self) -> int:
+        if self.type() not in reliq.Type.single:
+            return 0
+        return (self.single.chnode-self.struct.struct.nodes)//chnode_sz
+
+    def rposition(self) -> int:
+        if self.type() not in reliq.Type.single:
+            return 0
+        parent = self.single.cparent
+        if parent is None:
+            return (self.single.chnode-self.struct.struct.nodes)//chnode_sz
+        return (self.single.chnode-parent)//chnode_sz
+
     def attribsl(self) -> int:
         if self.type() is not reliq.Type.tag:
             return 0
