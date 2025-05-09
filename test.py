@@ -145,7 +145,7 @@ assert len(rq[0]) == 0
 assert len(rq[1]) == 288
 
 y = x[0].filter('li')
-assert len(y.filter('.n [0] img').self()) == 1
+assert len(y.filter('.n img').self()) == 4
 assert len(y.children()) == 13
 assert y.search('.x [0] img | "%(src)v", .y text@ RSS') == '{"x":"pix/git.svg","y":" RSS\\n"}'
 

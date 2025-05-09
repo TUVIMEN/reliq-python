@@ -708,7 +708,19 @@ class reliq():
 
         input = None
         inputl = 0
-        if self.compressed:
+        compr_buffer = None
+
+        if self.single is not None:
+            hnode = self.single.chnode-struct.nodes
+            parent = self.single.cparent
+            if parent is None:
+                parent = UINT32_MAX
+            else:
+                parent -= struct.nodes
+            compr_buffer = _reliq_compressed_struct(hnode,parent)
+            input = byref(compr_buffer)
+            inputl = 1
+        elif self.compressed is not None:
             input = self.compressed.compressed
             inputl = self.compressed.size
 
@@ -739,15 +751,22 @@ class reliq():
         compressedl = c_size_t()
 
         struct = self.struct.struct
-        if self.single is not None:
-            struct = _reliq_struct()
-            memmove(byref(struct),byref(self.struct.struct),sizeof(_reliq_struct))
-            struct.nodesl = self.single.hnode.desc()+1
-            struct.nodes = self.single.chnode
 
         input = None
         inputl = 0
-        if self.compressed:
+        compr_buffer = None
+
+        if self.single is not None:
+            hnode = self.single.chnode-struct.nodes
+            parent = self.single.cparent
+            if parent is None:
+                parent = UINT32_MAX
+            else:
+                parent -= struct.nodes
+            compr_buffer = _reliq_compressed_struct(hnode,parent)
+            input = byref(compr_buffer)
+            inputl = 1
+        elif self.compressed is not None:
             input = self.compressed.compressed
             inputl = self.compressed.size
 
