@@ -91,6 +91,90 @@ assert len(x.descendants(type=reliq.Type.text|reliq.Type.comment)) == 55
 assert len(x.full(type=None)) == 156
 assert isinstance(x.full(True),Generator)
 
+s = x[0][2]
+pos = s.position
+
+assert len(x.siblings()) == 11
+assert len(rq.siblings()) == 0
+
+assert len(s.siblings()) == 8
+assert len(s.siblings_preceding()) == 2
+assert len(s.siblings_subsequent()) == 6
+assert any(map(lambda x: x.position < pos,s.siblings_preceding()))
+assert any(map(lambda x: x.position > pos,s.siblings_subsequent()))
+
+assert len(x.siblings(full=True)) == 95
+assert len(rq.siblings(full=True)) == 0
+
+assert len(s.siblings_preceding(full=True)) == 4
+assert len(s.siblings_subsequent(full=True)) == 15
+assert len(s.siblings(full=True)) == 19
+assert any(map(lambda x: x.position < pos,s.siblings_preceding(full=True)))
+assert any(map(lambda x: x.position > pos,s.siblings_subsequent(full=True)))
+
+assert len(rq.everything()) == 148
+assert len(x.everything()) == 592
+assert len(s.everything()) == 148
+assert len(s.everything(type=None)) == s.struct.struct.nodesl
+
+assert len(rq.after()) == 0
+assert len(x.after()) == 283
+assert len(s.after()) == 130
+assert len(s.after(type=None)) == s.struct.struct.nodesl-pos-1
+def grows():
+    prev = pos
+    for i in map(lambda x: x.position,s.after(type=None)):
+        if i-prev != 1:
+            return False
+        prev = i
+    return True
+assert grows()
+
+assert len(rq.before()) == 0
+assert len(x.before()) == 305
+assert len(s.before()) == 17
+assert len(s.before(type=None)) == pos
+def descends():
+    prev = pos
+    for i in map(lambda x: x.position,s.before(type=None)):
+        if prev-i != 1:
+            return False
+        prev = i
+    return True
+assert descends()
+
+assert len(rq.rparent()) == 0
+assert len(x.rparent()) == len(x.self())
+assert len(s.rparent()) == 1
+assert s.rparent()[0].name == "ul"
+
+assert len(s.parent()) == 1
+assert s.parent()[0].name == 'ul'
+assert s.parent()[0].position == 28
+assert len(x.parent()) == len(x.self())
+assert x.parent()[3].name == 'main'
+assert rq.parent() == []
+
+assert rq.ancestors() == []
+assert len(x.ancestors()) == 14
+assert len(s.ancestors()) == 4
+assert s.ancestors()[0].name == 'ul'
+assert s.ancestors()[1].name == 'nav'
+assert s.ancestors()[2].name == 'body'
+assert s.ancestors()[3].name == 'html'
+
+assert len(rq.preceding()) == 0
+assert len(x.preceding()) == 291
+assert len(s.preceding()) == 13
+assert len(s.preceding(type=None)) == pos-len(s.ancestors())
+
+assert len(rq.subsequent()) == 0
+assert len(x.subsequent()) == 198
+assert len(s.subsequent()) == 128
+assert len(s.subsequent(type=None)) == s.struct.struct.nodesl-pos-s.desc-1
+
+breakpoint()
+
 assert x[0].starttag == "<ul>"
 assert x[0].endtag == "</ul>"
 assert x[0].endtag_strip == "/ul"
