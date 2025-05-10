@@ -539,18 +539,18 @@ class reliq():
     def __str__(self):
         return bytes(self).decode()
 
-    def _tag(self, raw: bool=False) -> Optional[str|bytes]:
+    def _name(self, raw: bool=False) -> Optional[str|bytes]:
         if self.type is not reliq.Type.tag:
             return None
         return strconv(self.single.hnode.tag,raw)
 
     @property
-    def tag_raw(self) -> Optional[bytes]:
-        return self._tag(True)
+    def name_raw(self) -> Optional[bytes]:
+        return self._name(True)
 
     @property
-    def tag(self) -> Optional[str]:
-        return self._tag()
+    def name(self) -> Optional[str]:
+        return self._name()
 
     def _starttag(self, raw: bool=False) -> Optional[str|bytes]:
         if self.type is not reliq.Type.tag:

@@ -121,10 +121,10 @@ assert x[0][1][0].rposition == 5
 assert x[0][1][0].position == 33
 
 assert x[0][0].insides() == "<li>🏡 Home</li>"
-assert x[0][0].tag == "a"
+assert x[0][0].name == "a"
 
 assert x[0][0].insides(raw=True) == b"<li>\xf0\x9f\x8f\xa1 Home</li>"
-assert x[0][0].tag_raw == b"a"
+assert x[0][0].name_raw == b"a"
 
 y = rq.full(type=None)
 assert y[0].type in reliq.Type.comment
