@@ -10,6 +10,7 @@ from ctypes import *
 from reliq import *
 from memory_profiler import profile
 from functools import lru_cache
+from typing import Generator
 
 html_data = None
 
@@ -81,9 +82,14 @@ rq = reliq(html_data)
 x = rq.filter('ul')
 
 assert len(x.self()) == 4
-assert len(x.children()) == 48
-assert len(x.descendants()) == 152
-assert len(x.full()) == 156
+assert len(x.children(type=None)) == 48
+assert len(x.children()) == 36
+assert len(x.descendants(type=None)) == 152
+assert len(x.descendants(type=reliq.Type.comment)) == 2
+assert len(x.descendants(type=reliq.Type.text)) == 53
+assert len(x.descendants(type=reliq.Type.text|reliq.Type.comment)) == 55
+assert len(x.full(type=None)) == 156
+assert isinstance(x.full(True),Generator)
 
 assert x[0].starttag == "<ul>"
 assert x[0].endtag == "</ul>"
@@ -138,10 +144,10 @@ assert x[1].attribs['href'] == '/index.html'
 assert x[0][0].insides(raw=True) == b"<li>\xf0\x9f\x8f\xa1 Home</li>"
 assert x[1].attribs_raw[b'href'] == b'/index.html'
 
-assert len(x[0].children()) == 9
+assert len(x[0].children(type=None)) == 9
 assert len(x[0].self()) == 1
-assert len(x[0].descendants()) == 31
-assert len(x[0].full()) == 32
+assert len(x[0].descendants(type=None)) == 31
+assert len(x[0].full(type=None)) == 32
 assert len(x[0]) == 31
 assert len(x[1]) == 2
 assert len(x[2]) == 1
@@ -150,7 +156,7 @@ assert len(rq[1]) == 288
 
 y = x[0].filter('li')
 assert len(y.filter('.n img').self()) == 4
-assert len(y.children()) == 13
+assert len(y.children(type=None)) == 13
 assert y.search('.x [0] img | "%(src)v", .y text@ RSS') == '{"x":"pix/git.svg","y":" RSS\\n"}'
 
 assert x[2].text == "🏡 Home"

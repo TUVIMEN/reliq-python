@@ -6,7 +6,7 @@ import os
 from ctypes import *
 #import ctypes.util
 import typing
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Callable, Generator
 from enum import Flag, auto
 
 import json
@@ -263,6 +263,45 @@ class reliq_struct():
     def __del__(self):
         libreliq.reliq_free(byref(self.struct))
 
+class reliqType(Flag):
+    plural_empty = auto()
+    plural_compressed = auto()
+    plural = plural_empty|plural_compressed
+
+    tag = auto()
+    textempty = auto()
+    texterr = auto()
+    text = auto()
+    textall = textempty|texterr|text
+    comment = auto()
+    single = tag|textempty|texterr|text|comment
+
+    unknown = auto()
+
+class reliqExpr():
+    def __init__(self,script: str|bytes|Path):
+        self.exprs = None
+        s = script
+        if isinstance(script,Path):
+            s = script.read_bytes()
+        elif isinstance(script,str):
+            s = script.encode("utf-8")
+
+        exprs = c_void_p()
+        err = libreliq.reliq_ecomp(cast(s,c_void_p),len(s),byref(exprs))
+        if err:
+            raise reliq._create_error(err)
+
+        self.exprs = exprs
+
+    def _extract(self):
+        return self.exprs
+
+    def __del__(self):
+        if self.exprs is not None:
+            libreliq.reliq_efree(self.exprs)
+
+
 class reliq():
     def __init__(self,html: Optional[typing.Union[str,bytes,'reliq']]):
         if isinstance(html,reliq):
@@ -287,44 +326,8 @@ class reliq():
             raise reliq._create_error(err)
         self.struct = reliq_struct(rq)
 
-    class expr():
-        def __init__(self,script: str|bytes|Path):
-            self.exprs = None
-            s = script
-            if isinstance(script,Path):
-                s = script.read_bytes()
-            elif isinstance(script,str):
-                s = script.encode("utf-8")
-
-            exprs = c_void_p()
-            err = libreliq.reliq_ecomp(cast(s,c_void_p),len(s),byref(exprs))
-            if err:
-                raise reliq._create_error(err)
-
-            self.exprs = exprs
-
-        def _extract(self):
-            return self.exprs
-
-        def __del__(self):
-            if self.exprs is not None:
-                libreliq.reliq_efree(self.exprs)
-
-    class Type(Flag):
-        plural_empty = auto()
-        plural_compressed = auto()
-        plural = plural_empty|plural_compressed
-
-        tag = auto()
-        textempty = auto()
-        texterr = auto()
-        text = auto()
-        textall = textempty|texterr|text
-        comment = auto()
-        single = tag|textempty|texterr|text|comment
-
-        unknown = auto()
-
+    expr = reliqExpr
+    Type = reliqType
 
     class Error(Exception):
         pass
@@ -414,44 +417,33 @@ class reliq():
 
         return reliq._init_single(self.data,self.struct,nodes+item*chnode_sz,parent)
 
-    def _self_compressed(self) -> list['reliq']:
-        i = 0
-        l = self.compressed.size.value
-        compressed = self.compressed.compressed
-        ret = []
+    def _axis(self, gen: bool, func: Callable, type: Optional[reliqType]) -> list['reliq']|Generator:
+        def y():
+            if self._isempty():
+                return
 
-        while i < l:
-            el = self.struct.struct.nodes+compressed[i].hnode*chnode_sz
-            ret.append(reliq._init_single(self.data,self.struct,el))
-            i += 1
+            for nodes, nodesl, lvl, parent in self._elnodes():
+                for i in func(self,nodes,nodesl,lvl,parent):
+                    if type is not None and not (i.type&type):
+                        continue
+                    yield i
 
-        return ret
+        r = y()
+        if not gen:
+            r = list(r)
+        return r
 
-    def _axis(self, func) -> list['reliq']:
-        if self._isempty():
-            return []
-
-        ret = []
-        for nodes, nodesl, lvl, parent in self._elnodes():
-            ret += func(self,nodes,nodesl,lvl,parent)
-
-        return ret
-
-    def self(self) -> list['reliq']:
+    def self(self, gen=False, type=None) -> list['reliq']|Generator:
         def from_nodes(self, nodes, nodesl, lvl, parent):
-            ret = []
             i = 0
             while i < nodesl:
                 n = reliq._init_single(self.data,self.struct,nodes+i*chnode_sz,parent)
-                ret.append(n)
-                hn = n.single.hnode
-                i += hn.desc+1
-            return ret
-        return self._axis(from_nodes)
+                i += n.single.hnode.desc+1
+                yield n
+        return self._axis(gen,from_nodes,type)
 
-    def children(self) -> list['reliq']:
+    def children(self, gen=False, type=reliqType.tag) -> list['reliq']|Generator:
         def from_nodes(self, nodes, nodesl, lvl, parent):
-            ret = []
             i = 1
             lvl += 1
             while i < nodesl:
@@ -460,15 +452,14 @@ class reliq():
 
                 if hn.lvl == lvl:
                     n = reliq._init_single(self.data,self.struct,node,parent)
-                    ret.append(n)
                     i += hn.desc+1
+                    yield n
                 else:
                     i += 1
-            return ret
 
-        return self._axis(from_nodes)
+        return self._axis(gen,from_nodes,type)
 
-    def descendants(self) -> list['reliq']:
+    def descendants(self, gen=False, type=reliqType.tag) -> list['reliq']|Generator:
         def from_nodes(self, nodes, nodesl, lvl, parent):
             ret = []
             i = 1
@@ -478,15 +469,14 @@ class reliq():
 
                 if hn.lvl > lvl:
                     n = reliq._init_single(self.data,self.struct,node,parent)
-                    ret.append(n)
+                    yield n
                 i += 1
             return ret
 
-        return self._axis(from_nodes)
+        return self._axis(gen,from_nodes,type)
 
-    def full(self) -> list['reliq']:
+    def full(self, gen=False, type=reliqType.tag) -> list['reliq']|Generator:
         def from_nodes(self, nodes, nodesl, lvl, parent):
-            ret = []
             i = 0
             while i < nodesl:
                 node = nodes+i*chnode_sz
@@ -494,11 +484,10 @@ class reliq():
 
                 if hn.lvl >= lvl:
                     n = reliq._init_single(self.data,self.struct,node,parent)
-                    ret.append(n)
+                    yield n
                 i += 1
-            return ret
 
-        return self._axis(from_nodes)
+        return self._axis(gen,from_nodes,type)
 
     def __bytes__(self):
         if self._isempty():
