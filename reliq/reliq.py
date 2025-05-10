@@ -81,9 +81,27 @@ class _reliq_compressed_struct(Structure):
                 ("parent",c_uintptr)]
 
 class reliq_compressed_list():
-    def __init__(self,compressed: POINTER(_reliq_compressed_struct),size: c_size_t):
+    def __init__(self, nodes: c_void_p, compressed: POINTER(_reliq_compressed_struct), size: c_size_t):
         self.compressed = cast(compressed,POINTER(_reliq_compressed_struct))
         self.size = size
+        self.nodes = nodes
+
+    def iter(self):
+        i = 0
+        size = self.size.value
+        compressed = self.compressed
+        while i < size:
+            c = compressed[i]
+            if c.hnode >= UINT32_MAX-6:
+                i += 1
+                continue
+
+            hnode = self.nodes+c.hnode*chnode_sz
+            parent = None
+            if c.parent != UINT32_MAX:
+                parent = c.parent+self.nodes
+            i += 1
+            yield hnode, parent
 
     def __del__(self):
         if self.compressed is not None:
@@ -357,26 +375,14 @@ class reliq():
             return (None,0,0,None)
 
         if self.compressed is not None:
-            i = 0
-            l = self.compressed.size.value
-            compressed = self.compressed.compressed
             ret = []
-
-            while i < l:
-                c = compressed[i]
-                if c.hnode >= UINT32_MAX-6:
-                    i += 1
-                    continue
-
-                nodes = self.struct.struct.nodes+c.hnode*chnode_sz
-                hn = chnode_conv(self.struct.struct,nodes)
+            for hnode, parent in self.compressed.iter():
+                hn = chnode_conv(self.struct.struct,hnode)
                 nodesl = hn.desc+1
-                parent = nodes
-                if c.parent != UINT32_MAX:
-                    parent = c.parent+self.struct.struct.nodes
+                if parent is None:
+                    parent = hnode
 
-                ret.append((nodes,nodesl,hn.lvl,parent))
-                i += 1
+                ret.append((hnode,nodesl,hn.lvl,parent))
             return ret
 
         if self.single is not None:
@@ -389,14 +395,6 @@ class reliq():
         nodes = self.struct.struct.nodes
         return [(nodes,nodesl,0,None)]
 
-    def __len__(self):
-        if self.struct is None:
-            return 0
-        if self.single is not None:
-            return self.single.hnode.desc
-        return self.struct.struct.nodesl
-
-
     def _isempty(self) -> bool:
         if self.struct is None:
             return True
@@ -404,18 +402,39 @@ class reliq():
             return True
         return False
 
+    def _getitem_r(self, type: reliqType) -> Generator:
+        if type in self.Type.plural_empty:
+            return self.self(gen=True,type=self.Type.tag)
+        if type in self.Type.plural_compressed:
+            return self.self(gen=True,type=None)
+        return self.children(gen=True,type=self.Type.tag)
+
     def __getitem__(self,item) -> 'reliq':
         if self._isempty():
             raise IndexError("list index out of range")
 
-        nodes, nodesl, lvl, parent = self._elnodes()[0]
+        rtype = self.type
+        if rtype not in self.Type.single:
+            nodes, nodesl, lvl, parent = self._elnodes()[0]
+            if item >= nodesl:
+                raise IndexError("list index out of range")
 
-        if self.single is not None:
-            item += 1
-        if item >= nodesl:
-            raise IndexError("list index out of range")
+        index = 0
+        for i in self._getitem_r(rtype):
+            if index == item:
+                return i
+            index += 1
 
-        return reliq._init_single(self.data,self.struct,nodes+item*chnode_sz,parent)
+        raise IndexError("list index out of range")
+
+    def __len__(self):
+        if self._isempty():
+            return 0
+
+        count = 0
+        for i in self._getitem_r(self.type):
+            count += 1
+        return count
 
     def _axis(self, gen: bool, func: Callable, type: Optional[reliqType]) -> list['reliq']|Generator:
         def y():
@@ -433,13 +452,17 @@ class reliq():
             r = list(r)
         return r
 
-    def self(self, gen=False, type=None) -> list['reliq']|Generator:
+    def self(self, gen=False, type="") -> list['reliq']|Generator:
         def from_nodes(self, nodes, nodesl, lvl, parent):
             i = 0
             while i < nodesl:
                 n = reliq._init_single(self.data,self.struct,nodes+i*chnode_sz,parent)
                 i += n.single.hnode.desc+1
                 yield n
+
+        if type == "":
+            type = self.Type.tag if self.compressed is None else None
+
         return self._axis(gen,from_nodes,type)
 
     def children(self, gen=False, type=reliqType.tag) -> list['reliq']|Generator:
@@ -490,15 +513,22 @@ class reliq():
         return self._axis(gen,from_nodes,type)
 
     def __bytes__(self):
+        ret = b""
         if self._isempty():
-            return b""
+            return ret
 
         if self.single is not None:
             return bytes(self.single.hnode.all)
 
+        if self.compressed is not None:
+            for hnode, parent in self.compressed.iter():
+                hn = chnode_conv(self.struct.struct,hnode)
+                ret += bytes(hn)
+
+            return ret
+
         nodes = self.struct.struct.nodes
         nodesl = self.struct.struct.nodesl
-        ret = b""
         i = 0
         while i < nodesl:
             hn = chnode_conv(self.struct.struct,nodes+i*chnode_sz)
@@ -717,7 +747,7 @@ class reliq():
         return self._text(recursive=True)
 
     @property
-    def text_recurive_raw(self):
+    def text_recursive_raw(self):
         return self._text(recursive=True,raw=True)
 
     @staticmethod
@@ -854,7 +884,7 @@ class reliq():
                     libreliq.reliq_std_free(compressed,0)
                 else:
                     ret = reliq(self)
-                    ret.compressed = reliq_compressed_list(compressed,compressedl)
+                    ret.compressed = reliq_compressed_list(struct.nodes,compressed,compressedl)
         else:
             ret = reliq(None)
             libreliq.reliq_std_free(compressed,0)
