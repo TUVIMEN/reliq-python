@@ -173,8 +173,6 @@ assert len(x.subsequent()) == 198
 assert len(s.subsequent()) == 128
 assert len(s.subsequent(type=None)) == s.struct.struct.nodesl-pos-s.desc-1
 
-breakpoint()
-
 assert x[0].starttag == "<ul>"
 assert x[0].endtag == "</ul>"
 assert x[0].endtag_strip == "/ul"
