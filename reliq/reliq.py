@@ -39,9 +39,11 @@ def strconv(string, raw: bool) -> str|bytes:
 #cstdlib = CDLL(ctypes.util.find_library("c"))
 
 class reliq_str():
-    def __init__(self,string: str | bytes | c_void_p,size=0):
+    def __init__(self,string: str|bytes|Path|c_void_p,size=0):
         if isinstance(string,str):
             string = string.encode("utf-8")
+        elif isinstance(string,Path):
+            string = string.read_bytes()
 
         if isinstance(string,bytes) and size == 0:
             size = len(string)
@@ -323,7 +325,7 @@ class reliqExpr():
 
 
 class reliq():
-    def __init__(self,html: Optional[typing.Union[str,bytes,'reliq']] = None):
+    def __init__(self,html: Optional[typing.Union[str,bytes,Path,'reliq']] = None):
         if isinstance(html,reliq):
             self.data = html.data
             self.struct = html.struct
