@@ -134,6 +134,25 @@ class reliq_single:
         self._parent_d = chnode_conv(self.rq,self.cparent)
         return self._parent_d
 
+class reliqType(Flag):
+    empty = auto()
+
+    struct = auto()
+
+    list = auto()
+
+    plural = struct|list
+
+    tag = auto()
+    textempty = auto()
+    texterr = auto()
+    text = auto()
+    textall = textempty|texterr|text
+    comment = auto()
+    single = tag|textempty|texterr|text|comment
+
+    unknown = auto()
+
 class _reliq_attrib_struct(Structure):
     _fields_ = [('key',_reliq_cstr_struct),('value',_reliq_cstr_struct)]
 
@@ -154,7 +173,7 @@ class _reliq_hnode_struct(Structure):
         return self.tag_count+self.text_count+self.comment_count
 
     @property
-    def ntype(self) -> "reliq.Type":
+    def ntype(self) -> reliqType:
         match self.type:
             case 0:
                 return reliq.Type.tag
@@ -284,25 +303,6 @@ class reliq_struct():
     def __del__(self):
         libreliq.reliq_free(byref(self.struct))
 
-class reliqType(Flag):
-    empty = auto()
-
-    struct = auto()
-
-    list = auto()
-
-    plural = struct|list
-
-    tag = auto()
-    textempty = auto()
-    texterr = auto()
-    text = auto()
-    textall = textempty|texterr|text
-    comment = auto()
-    single = tag|textempty|texterr|text|comment
-
-    unknown = auto()
-
 class reliqExpr():
     def __init__(self,script: str|bytes|Path):
         self.exprs = None
@@ -408,20 +408,27 @@ class reliq():
         return False
 
     def _getitem_r(self, type: reliqType) -> Generator['reliq']:
-        if type in self.Type.struct:
-            return self.self(gen=True,type=self.Type.tag)
-        if type in self.Type.list:
-            return self.self(gen=True,type=None)
-        return self.children(gen=True,type=self.Type.tag)
+        if type in self.Type.single:
+            return self.children(gen=True)
+        return self.self(gen=True)
+
+    def _noaxis(self) -> Optional[reliqType]:
+        rtype = self.type
+
+        if rtype in self.Type.empty|self.Type.unknown:
+            return None # should be treated as True
+
+        return rtype
 
     def __getitem__(self,item) -> 'reliq':
-        if self._isempty:
-            raise IndexError("list index out of range")
+        rtype = self._noaxis()
 
-        rtype = self.type
-        if rtype not in self.Type.single:
+        if rtype in self.Type.struct:
             nodes, nodesl, lvl, parent = self._elnodes()[0]
             if item >= nodesl:
+                raise IndexError("list index out of range")
+        elif rtype in self.Type.list:
+            if item >= self.compressed.size.value:
                 raise IndexError("list index out of range")
 
         index = 0
@@ -433,7 +440,7 @@ class reliq():
         raise IndexError("list index out of range")
 
     def __len__(self):
-        if self._isempty:
+        if self._noaxis() is None:
             return 0
 
         count = 0
@@ -443,7 +450,7 @@ class reliq():
 
     def _axis(self, gen: bool, func: Callable, type: Optional[reliqType]) -> list['reliq']|Generator['reliq']:
         def y():
-            if self._isempty:
+            if self._noaxis() is None:
                 return
 
             for nodes, nodesl, lvl, parent in self._elnodes():
@@ -807,13 +814,21 @@ class reliq():
     def endtag(self) -> Optional[str]:
         return self._endtag()
 
-    def insides(self, raw: bool=False) -> Optional[str|bytes]:
+    def _insides(self, raw: bool=False) -> Optional[str|bytes]:
         if self.type not in reliq.Type.tag|reliq.Type.comment:
             return None
         return strconv(self.single.hnode.insides,raw)
 
     @property
-    def desc(self) -> int: #count of descendants
+    def insides(self) -> Optional[str]:
+        return self._insides()
+
+    @property
+    def insides_raw(self) -> Optional[bytes]:
+        return self._insides(True)
+
+    @property
+    def desc_count(self) -> int: #count of descendants
         if self.type is not reliq.Type.tag:
             return 0
         return self.single.hnode.desc

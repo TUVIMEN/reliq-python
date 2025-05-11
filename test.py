@@ -14,7 +14,7 @@ from typing import Generator
 
 html_data = None
 
-with open("index.html", "r") as f:
+with open("index.html", "rb") as f:
     html_data = f.read()
 
 # cat /proc/$(pidof python3)/status  | grep ^VmRSS
@@ -80,6 +80,8 @@ print(sum(sys.getsizeof(i) for i in gc.get_objects()))
 
 rq = reliq(html_data)
 x = rq.filter('ul')
+
+assert x.get_data(True) is html_data
 
 assert len(x.self()) == 4
 assert len(x.children(type=None)) == 48
@@ -171,7 +173,7 @@ assert len(s.preceding(type=None)) == pos-len(s.ancestors())
 assert len(rq.subsequent()) == 0
 assert len(x.subsequent()) == 198
 assert len(s.subsequent()) == 128
-assert len(s.subsequent(type=None)) == s.struct.struct.nodesl-pos-s.desc-1
+assert len(s.subsequent(type=None)) == s.struct.struct.nodesl-pos-s.desc_count-1
 
 assert x[0].starttag == "<ul>"
 assert x[0].endtag == "</ul>"
@@ -192,7 +194,7 @@ assert x[1].attribsl == 1
 assert rq[0].text_count == 139
 assert rq[0].tag_count == 147
 assert rq[0].comment_count == 2
-assert rq[0].desc == 288
+assert rq[0].desc_count == 288
 assert rq[0].lvl == 0
 assert rq[0][0].position == 3
 assert rq[0][0].rposition == 3
@@ -202,10 +204,10 @@ assert x.descendants()[3].position == 33
 assert x[0][1][0].rposition == 5
 assert x[0][1][0].position == 33
 
-assert x[0][0].insides() == "<li>🏡 Home</li>"
+assert x[0][0].insides == "<li>🏡 Home</li>"
 assert x[0][0].name == "a"
 
-assert x[0][0].insides(raw=True) == b"<li>\xf0\x9f\x8f\xa1 Home</li>"
+assert x[0][0].insides_raw == b"<li>\xf0\x9f\x8f\xa1 Home</li>"
 assert x[0][0].name_raw == b"a"
 
 y = rq.full(type=None)
@@ -215,17 +217,17 @@ assert y[2].type in reliq.Type.textempty
 assert y[2].type in reliq.Type.textall
 assert y[2].type not in reliq.Type.text
 
-assert y[0].insides() == "DOCTYPE HTML"
-assert y[2].insides() == None
+assert y[0].insides == "DOCTYPE HTML"
+assert y[2].insides == None
 
-assert y[0].insides(raw=True) == b"DOCTYPE HTML"
-assert y[2].insides(raw=True) == None
+assert y[0].insides_raw == b"DOCTYPE HTML"
+assert y[2].insides_raw == None
 
 x = rq.filter('ul',True)
-assert x[0][0].insides() == "<li>🏡 Home</li>"
+assert x[0][0].insides == "<li>🏡 Home</li>"
 assert x[0][0].attribs['href'] == '/index.html'
 
-assert x[0][0].insides(raw=True) == b"<li>\xf0\x9f\x8f\xa1 Home</li>"
+assert x[0][0].insides_raw == b"<li>\xf0\x9f\x8f\xa1 Home</li>"
 assert x[0][0].attribs_raw[b'href'] == b'/index.html'
 
 assert len(str(x)) == 3472
