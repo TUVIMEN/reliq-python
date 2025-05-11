@@ -323,7 +323,7 @@ class reliqExpr():
 
 
 class reliq():
-    def __init__(self,html: Optional[typing.Union[str,bytes,'reliq']]):
+    def __init__(self,html: Optional[typing.Union[str,bytes,'reliq']] = None):
         if isinstance(html,reliq):
             self.data = html.data
             self.struct = html.struct
