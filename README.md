@@ -343,6 +343,8 @@ If their first argument is set to `True` or `gen=True` is passed, a generator is
 
 By default they filter node types to only `reliq.Type.tag`, this can be changed by setting the `type` argument e.g. `type=reliq.Type.comment|reliq.Type.texterr`. If type is set to `None` all types are matched.
 
+If `rel=True` is passed returned objects will be relative to object from which they were matched.
+
 ```python
 rq = reliq("""
   <!DOCTYPE html>
@@ -488,7 +490,9 @@ rq[0].parent() # top level nodes don't have parents
 
 #### rparent
 
-`rparent()` behaves like `parent()` but returns the parent to which the current object is relative to.
+`rparent()` behaves like `parent()` but returns the parent to which the current object is relative to. Doesn't work for `struct` type.
+
+It doesn't take `rel` argument, returned objects are always relative.
 
 #### ancestors
 
@@ -817,6 +821,70 @@ try:
   reliq.expr('| |')
 except reliq.ScriptError:
   print('incorrect expression')
+```
+
+### Relativity
+
+`list` and `single` type object also stores a pointer to node that object is relative to in context i.e. `rq.filter(r'body; nav')` will return `nav` objects that were found in `body` tags, `nav` objects might not be direct siblings of `body` tags but because of relativity their relation is not lost.
+
+`reliq.filter()` always keeps the relativity.
+
+By default axis functions don't change relativity unless `rel=True` is passed.
+
+```python
+rq = reliq("""
+  <body>
+    <nav>
+      <ul>
+        <li> A </li>
+        <li> B </li>
+        <li> C </li>
+      </ul>
+    </nav>
+  </body>
+""")
+
+li = rq[0][0][0][1] # not relative
+
+li_self = rq.filter('li i@w>"B"')[0] # relative to itself
+
+li_rel = rq.filter('nav; li i@w>"B"')[0] # relative to nav
+
+# .rlvl and .rposition for non relative objects return same values as .lvl and .position
+
+li.lvl
+# 3
+li_rel.lvl
+# 3
+
+li.rlvl
+# 3
+li_rel.rlvl
+# 2
+
+li.position
+# 10
+li_rel.position
+# 10
+
+li.rposition
+# 10
+li_rel.rposition
+# 9
+
+nav = rq[0][0]
+for i in nav.descendants(rel=True):
+    if i.rlvl == 2 and i.name == 'li':
+        print(i.lvl,i.rlvl)
+        # 3 2
+        break
+
+nav_rel = li_rel.rparent()[0] # nav element relative to li
+
+nav_rel.rlvl
+# -2
+nav_rel.rposition
+# -7
 ```
 
 ## Projects using reliq in python
