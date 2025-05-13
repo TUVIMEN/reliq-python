@@ -277,7 +277,11 @@ libreliq_functions = [
     ),(
         libreliq.reliq_decode_entities_str,
         None,
-        [c_void_p,c_size_t,POINTER(c_void_p),POINTER(c_size_t)]
+        [c_void_p,c_size_t,POINTER(c_void_p),POINTER(c_size_t),c_bool]
+    ),(
+        libreliq.reliq_encode_entities_str,
+        None,
+        [c_void_p,c_size_t,POINTER(c_void_p),POINTER(c_size_t),c_bool]
     )
 ]
 
@@ -976,13 +980,26 @@ class reliq():
         return self._text(recursive=True,raw=True)
 
     @staticmethod
-    def decode(string: str|bytes, raw: bool=False) -> str|bytes:
+    def decode(string: str|bytes, raw: bool=False, no_nbsp=True) -> str|bytes:
         if isinstance(string,str):
             string = string.encode("utf-8")
         src = c_void_p()
         srcl = c_size_t()
 
-        libreliq.reliq_decode_entities_str(cast(string,c_void_p),len(string),byref(src),byref(srcl))
+        libreliq.reliq_decode_entities_str(cast(string,c_void_p),len(string),byref(src),byref(srcl), c_bool(no_nbsp))
+        ret = string_at(src,srcl.value)
+        libreliq.reliq_std_free(src,0)
+
+        return strconv(ret,raw)
+
+    @staticmethod
+    def encode(string: str|bytes, raw: bool=False, full=False) -> str|bytes:
+        if isinstance(string,str):
+            string = string.encode("utf-8")
+        src = c_void_p()
+        srcl = c_size_t()
+
+        libreliq.reliq_encode_entities_str(cast(string,c_void_p),len(string),byref(src),byref(srcl), c_bool(full))
         ret = string_at(src,srcl.value)
         libreliq.reliq_std_free(src,0)
 

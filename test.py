@@ -270,6 +270,16 @@ assert len(rq.self(type=None)) == 3
 
 assert reliq.decode('loop &amp; &lt &tdot; &#212') == "loop & <  ⃛⃛ Ô"
 assert reliq.decode('loop &amp; &lt &tdot; &#212',raw=True) == b"loop & <  \xe2\x83\x9b\xe2\x83\x9b \xc3\x94"
+assert reliq.decode('nn&nbsp;nope') == 'nn nope'
+assert reliq.decode('nn&nbsp;nope',True) == b'nn nope'
+assert reliq.decode('nn&nbsp;nope',no_nbsp=False) == 'nn\xa0nope'
+assert reliq.decode('nn&nbsp;nope',True,no_nbsp=False) == b'nn\xc2\xa0nope'
+
+assert reliq.encode("<p>li &amp; \t 'seq' \n </p>") == '&lt;p&gt;li &amp;amp; \t &#x27;seq&#x27; \n &lt;/p&gt;'
+assert reliq.encode("<p>li &amp; \t 'seq' \n </p>",True) == b'&lt;p&gt;li &amp;amp; \t &#x27;seq&#x27; \n &lt;/p&gt;'
+assert reliq.encode("<p>li &amp; \t 'seq' \n </p>",raw=True) == b'&lt;p&gt;li &amp;amp; \t &#x27;seq&#x27; \n &lt;/p&gt;'
+assert reliq.encode("<p>li &amp; \t 'seq' \n </p>",full=True) == '&lt;p&gt;li &amp;amp&semi; &Tab; &#x27;seq&#x27; &NewLine; &lt;&sol;p&gt;'
+assert reliq.encode("<p>li &amp; \t 'seq' \n </p>",True,full=True) == b'&lt;p&gt;li &amp;amp&semi; &Tab; &#x27;seq&#x27; &NewLine; &lt;&sol;p&gt;'
 
 reliq.expr('li')
 reliq.expr(b'li')
