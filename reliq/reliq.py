@@ -55,7 +55,7 @@ class reliq_str():
 
     def __bytes__(self):
         string = self.string
-        if isinstance(string,c_void_p):
+        if isinstance(string,c_void_p) or isinstance(string,int):
             string = string_at(string,self.size)
         return string
 
@@ -423,19 +423,20 @@ class reliq():
     def __getitem__(self,item) -> 'reliq':
         rtype = self._noaxis()
 
-        if rtype in self.Type.struct:
-            nodes, nodesl, lvl, parent = self._elnodes()[0]
-            if item >= nodesl:
-                raise IndexError("list index out of range")
-        elif rtype in self.Type.list:
-            if item >= self.compressed.size.value:
-                raise IndexError("list index out of range")
+        if rtype is not None:
+            if rtype in self.Type.struct:
+                nodes, nodesl, lvl, parent = self._elnodes()[0]
+                if item >= nodesl:
+                    raise IndexError("list index out of range")
+            elif rtype in self.Type.list:
+                if item >= self.compressed.size.value:
+                    raise IndexError("list index out of range")
 
-        index = 0
-        for i in self._getitem_r(rtype):
-            if index == item:
-                return i
-            index += 1
+            index = 0
+            for i in self._getitem_r(rtype):
+                if index == item:
+                    return i
+                index += 1
 
         raise IndexError("list index out of range")
 
@@ -1098,8 +1099,6 @@ class reliq():
 
         if compressed:
             if not err:
-                nstruct = None
-                data = None
                 if independent:
                     nstruct = reliq_struct(libreliq.reliq_from_compressed_independent(compressed,compressedl,byref(struct)))
                     data = reliq_str(nstruct.struct.data,nstruct.struct.datal)
