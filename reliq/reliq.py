@@ -102,7 +102,7 @@ class reliq_compressed_list():
             hnode = self.nodes+c.hnode*chnode_sz
             parent = None
             if c.parent != UINT32_MAX:
-                parent = c.parent+self.nodes
+                parent = self.nodes+(c.parent*chnode_sz)
             i += 1
             yield hnode, parent
 
@@ -1064,7 +1064,7 @@ class reliq():
             if parent is None:
                 parent = UINT32_MAX
             else:
-                parent -= struct.nodes
+                parent = (parent-struct.nodes)//chnode_sz
             compr_buffer = _reliq_compressed_struct(hnode,parent)
             input = byref(compr_buffer)
             inputl = 1
@@ -1107,7 +1107,7 @@ class reliq():
             if parent is None:
                 parent = UINT32_MAX
             else:
-                parent -= struct.nodes
+                parent = (parent-struct.nodes)//chnode_sz
             compr_buffer = _reliq_compressed_struct(hnode,parent)
             input = byref(compr_buffer)
             inputl = 1
