@@ -1059,7 +1059,7 @@ class reliq():
         compr_buffer = None
 
         if self.single is not None:
-            hnode = self.single.chnode-struct.nodes
+            hnode = (self.single.chnode-struct.nodes)//sizeof(_reliq_compressed_struct)
             parent = self.single.cparent
             if parent is None:
                 parent = UINT32_MAX
@@ -1102,7 +1102,7 @@ class reliq():
         compr_buffer = None
 
         if self.single is not None:
-            hnode = self.single.chnode-struct.nodes
+            hnode = (self.single.chnode-struct.nodes)//sizeof(_reliq_compressed_struct)
             parent = self.single.cparent
             if parent is None:
                 parent = UINT32_MAX
