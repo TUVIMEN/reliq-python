@@ -268,6 +268,11 @@ assert len(w[2].text) == 95
 assert len(rq.self()) == 1
 assert len(rq.self(type=None)) == 3
 
+w = rq.filter('[0] li')
+assert str(w) == str(w[0])
+w = rq.filter('[0] ul')
+assert w.search('text@ *') == '🏡 Home\n📜 Blog\n Software\n LandChad\n📚 LindyPress\n LARBS\n📧 Contact\n RSS\n💸 Donate\n'
+
 assert reliq.decode('loop &amp; &lt &tdot; &#212') == "loop & <  ⃛⃛ Ô"
 assert reliq.decode('loop &amp; &lt &tdot; &#212',raw=True) == b"loop & <  \xe2\x83\x9b\xe2\x83\x9b \xc3\x94"
 assert reliq.decode('nn&nbsp;nope') == 'nn nope'

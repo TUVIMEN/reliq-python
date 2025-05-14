@@ -379,10 +379,11 @@ class reliq():
         return ret
 
     def _elnodes(self) -> Tuple[Optional[c_void_p],int,int,Optional[c_void_p]]:
-        if self._isempty:
+        rtype = self.type
+        if rtype in reliq.Type.empty|reliq.Type.unknown:
             return (None,0,0,None)
 
-        if self.compressed is not None:
+        if rtype in reliq.Type.list:
             ret = []
             for hnode, parent in self.compressed.iter():
                 hn = chnode_conv(self.struct.struct,hnode)
@@ -393,7 +394,7 @@ class reliq():
                 ret.append((hnode,nodesl,hn.lvl,parent))
             return ret
 
-        if self.single is not None:
+        if rtype in reliq.Type.single:
             nodes = self.single.chnode
             hn = self.single.hnode
             nodesl = hn.desc+1
@@ -736,17 +737,20 @@ class reliq():
 
     def __bytes__(self):
         ret = b""
-        if self._isempty:
-            return ret
 
-        if self.single is not None:
+        rtype = self.type
+
+        if rtype in self.Type.single:
             return bytes(self.single.hnode.all)
 
-        if self.compressed is not None:
+        if rtype is self.Type.list:
             for hnode, parent in self.compressed.iter():
                 hn = chnode_conv(self.struct.struct,hnode)
                 ret += bytes(hn)
 
+            return ret
+
+        if rtype is not self.Type.struct:
             return ret
 
         nodes = self.struct.struct.nodes
@@ -1039,7 +1043,9 @@ class reliq():
     def search(self, script: typing.Union[str,bytes,Path,reliqExpr], raw: bool=False) -> str|bytes:
         conv = lambda x: strconv(x,raw)
         ret = conv('')
-        if self._isempty:
+
+        rtype = self.type
+        if rtype in self.Type.empty|self.Type.unknown:
             return ret
 
         exprs = self._convscript(script)
@@ -1048,7 +1054,7 @@ class reliq():
         srcl = c_size_t()
 
         struct = self.struct.struct
-        if self.single is not None:
+        if rtype in self.Type.single:
             struct = _reliq_struct()
             memmove(byref(struct),byref(self.struct.struct),sizeof(_reliq_struct))
             struct.nodesl = self.single.hnode.desc+1
@@ -1058,7 +1064,7 @@ class reliq():
         inputl = 0
         compr_buffer = None
 
-        if self.single is not None:
+        if rtype in self.Type.single:
             hnode = (self.single.chnode-struct.nodes)//chnode_sz
             parent = self.single.cparent
             if parent is None:
@@ -1068,7 +1074,7 @@ class reliq():
             compr_buffer = _reliq_compressed_struct(hnode,parent)
             input = byref(compr_buffer)
             inputl = 1
-        elif self.compressed is not None:
+        elif rtype is self.Type.list:
             input = self.compressed.compressed
             inputl = self.compressed.size
 
@@ -1087,7 +1093,8 @@ class reliq():
         return json.loads(self.search(script,raw=True))
 
     def filter(self,script: typing.Union[str,bytes,Path,reliqExpr],independent: bool=False) -> "reliq":
-        if self._isempty:
+        rtype = self.type
+        if rtype in self.Type.empty|self.Type.unknown:
             return self
 
         exprs = self._convscript(script)
@@ -1101,7 +1108,7 @@ class reliq():
         inputl = 0
         compr_buffer = None
 
-        if self.single is not None:
+        if rtype in self.Type.single:
             hnode = (self.single.chnode-struct.nodes)//chnode_sz
             parent = self.single.cparent
             if parent is None:
@@ -1111,7 +1118,7 @@ class reliq():
             compr_buffer = _reliq_compressed_struct(hnode,parent)
             input = byref(compr_buffer)
             inputl = 1
-        elif self.compressed is not None:
+        elif rtype is self.Type.list:
             input = self.compressed.compressed
             inputl = self.compressed.size
 
