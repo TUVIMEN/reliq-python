@@ -173,7 +173,7 @@ x.get_data(True) is data
 
 ### special methods
 
-#### __bytes__ and __str__
+#### \_\_bytes\_\_ and \_\_str\_\_
 
 Full string representation of current object
 
@@ -197,7 +197,7 @@ str(reliq()) # empty
 # ''
 ```
 
-#### __getitem__
+#### \_\_getitem\_\_
 
 For `single` indexes results from `children()` axis, otherwise from `self()` axis
 
@@ -217,7 +217,7 @@ r[1] # list
 r[2] == first[1]
 ```
 
-#### __len__
+#### \_\_len\_\_
 
 Amount of objects returned from `__getitem__`
 
