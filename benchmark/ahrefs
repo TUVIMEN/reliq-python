@@ -1,0 +1,22 @@
+#!/bin/bash
+
+IFS=$'\n'
+
+ucurl() {
+    curl -k -L -g -m 120 -s -H "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) QtWebEngine/5.15.2 Chrome/87.0.4280.144 Safari/537.36" -H "Accept-Encoding: gzip, deflate"  --compressed "$@"
+}
+
+to="$1"
+g=0
+next='https://ahrefs.com/websites'
+
+while :
+do
+  t="$(ucurl "$next")"
+  reliq 'tr #E>"[0-9]+"; a l@[2] c@[0] Cc@[1]; text@ * [0] | "https://%A\n"' <<< "$t"
+  [ "$g" -lt "$to" ] || break
+
+  next="$(reliq '[0] a c@[0] i@"→" | "https:%(href)v\n"' <<< "$t")"
+  [ -z "$next" ] && break
+  ((g++))
+done
