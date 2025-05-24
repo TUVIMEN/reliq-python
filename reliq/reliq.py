@@ -412,7 +412,7 @@ class reliq():
             return True
         return False
 
-    def _getitem_r(self, type: reliqType) -> Generator['reliq']:
+    def _getitem_r(self, type: reliqType) -> Generator['reliq',None,None]:
         if type in self.Type.single:
             return self.children(gen=True)
         return self.self(gen=True)
@@ -454,7 +454,7 @@ class reliq():
             count += 1
         return count
 
-    def _axis(self, gen: bool, func: Callable, type: Optional[reliqType], rel=False) -> list['reliq']|Generator['reliq']:
+    def _axis(self, gen: bool, func: Callable, type: Optional[reliqType], rel=False) -> list['reliq']|Generator['reliq',None,None]:
         def y():
             if self._noaxis() is None:
                 return
@@ -473,7 +473,7 @@ class reliq():
             r = list(r)
         return r
 
-    def self(self, gen=False, type="", rel=False) -> list['reliq']|Generator['reliq']:
+    def self(self, gen=False, type="", rel=False) -> list['reliq']|Generator['reliq',None,None]:
         def from_nodes(self, nodes, nodesl, lvl, parent):
             i = 0
             while i < nodesl:
@@ -486,7 +486,7 @@ class reliq():
 
         return self._axis(gen,from_nodes,type=type,rel=rel)
 
-    def children(self, gen=False, type=reliqType.tag, rel=False) -> list['reliq']|Generator['reliq']:
+    def children(self, gen=False, type=reliqType.tag, rel=False) -> list['reliq']|Generator['reliq',None,None]:
         def from_nodes(self, nodes, nodesl, lvl, parent):
             i = 1
             lvl += 1
@@ -503,7 +503,7 @@ class reliq():
 
         return self._axis(gen,from_nodes,type=type,rel=rel)
 
-    def descendants(self, gen=False, type=reliqType.tag, rel=False) -> list['reliq']|Generator['reliq']:
+    def descendants(self, gen=False, type=reliqType.tag, rel=False) -> list['reliq']|Generator['reliq',None,None]:
         def from_nodes(self, nodes, nodesl, lvl, parent):
             ret = []
             i = 1
@@ -518,7 +518,7 @@ class reliq():
 
         return self._axis(gen,from_nodes,type=type,rel=rel)
 
-    def full(self, gen=False, type=reliqType.tag, rel=False) -> list['reliq']|Generator['reliq']:
+    def full(self, gen=False, type=reliqType.tag, rel=False) -> list['reliq']|Generator['reliq',None,None]:
         def from_nodes(self, nodes, nodesl, lvl, parent):
             i = 0
             while i < nodesl:
@@ -531,7 +531,7 @@ class reliq():
 
         return self._axis(gen,from_nodes,type=type,rel=rel)
 
-    def everything(self, gen=False, type=reliqType.tag, rel=False) -> list['reliq']|Generator['reliq']:
+    def everything(self, gen=False, type=reliqType.tag, rel=False) -> list['reliq']|Generator['reliq',None,None]:
         def from_nodes(self, nodes, nodesl, lvl, parent):
             i = 0
             nodes = self.struct.struct.nodes
@@ -544,7 +544,7 @@ class reliq():
 
         return self._axis(gen,from_nodes,type=type,rel=rel)
 
-    def rparent(self, gen=False, type=reliqType.tag) -> list['reliq']|Generator['reliq']:
+    def rparent(self, gen=False, type=reliqType.tag) -> list['reliq']|Generator['reliq',None,None]:
         def from_nodes(self, nodes, nodesl, lvl, parent):
             if parent is not None:
                 yield reliq._init_single(self.data,self.struct,parent,nodes)
@@ -565,7 +565,7 @@ class reliq():
             j -= 1
         return None, 0
 
-    def parent(self, gen=False, type=reliqType.tag, rel=False) -> list['reliq']|Generator['reliq']:
+    def parent(self, gen=False, type=reliqType.tag, rel=False) -> list['reliq']|Generator['reliq',None,None]:
         def from_nodes(self, nodes, nodesl, lvl, parent):
             if self.Type.struct in self.type:
                 return
@@ -575,7 +575,7 @@ class reliq():
 
         return self._axis(gen,from_nodes,type=type,rel=rel)
 
-    def ancestors(self, gen=False, type=reliqType.tag, rel=False) -> list['reliq']|Generator['reliq']:
+    def ancestors(self, gen=False, type=reliqType.tag, rel=False) -> list['reliq']|Generator['reliq',None,None]:
         def from_nodes(self, nodes, nodesl, lvl, parent):
             if self.Type.struct in self.type:
                 return
@@ -591,7 +591,7 @@ class reliq():
 
         return self._axis(gen,from_nodes,type=type,rel=rel)
 
-    def before(self, gen=False, type=reliqType.tag, rel=False) -> list['reliq']|Generator['reliq']:
+    def before(self, gen=False, type=reliqType.tag, rel=False) -> list['reliq']|Generator['reliq',None,None]:
         def from_nodes(self, nodes, nodesl, lvl, parent):
             if self.Type.struct in self.type:
                 return
@@ -608,7 +608,7 @@ class reliq():
 
         return self._axis(gen,from_nodes,type=type,rel=rel)
 
-    def preceding(self, gen=False, type=reliqType.tag, rel=False) -> list['reliq']|Generator['reliq']:
+    def preceding(self, gen=False, type=reliqType.tag, rel=False) -> list['reliq']|Generator['reliq',None,None]:
         def from_nodes(self, nodes, nodesl, lvl, parent):
             if self.Type.struct in self.type:
                 return
@@ -638,7 +638,7 @@ class reliq():
 
         return self._axis(gen,from_nodes,type=type,rel=rel)
 
-    def after(self, gen=False, type=reliqType.tag, rel=False) -> list['reliq']|Generator['reliq']:
+    def after(self, gen=False, type=reliqType.tag, rel=False) -> list['reliq']|Generator['reliq',None,None]:
         def from_nodes(self, nodes, nodesl, lvl, parent):
             if self.Type.struct in self.type:
                 return
@@ -654,7 +654,7 @@ class reliq():
 
         return self._axis(gen,from_nodes,type=type,rel=rel)
 
-    def subsequent(self, gen=False, type=reliqType.tag, rel=False) -> list['reliq']|Generator['reliq']:
+    def subsequent(self, gen=False, type=reliqType.tag, rel=False) -> list['reliq']|Generator['reliq',None,None]:
         def from_nodes(self, nodes, nodesl, lvl, parent):
             if self.Type.struct in self.type:
                 return
@@ -671,7 +671,7 @@ class reliq():
 
         return self._axis(gen,from_nodes,type=type,rel=rel)
 
-    def siblings_preceding(self, gen=False, type=reliqType.tag, full=False, rel=False) -> list['reliq']|Generator['reliq']:
+    def siblings_preceding(self, gen=False, type=reliqType.tag, full=False, rel=False) -> list['reliq']|Generator['reliq',None,None]:
         def from_nodes(self, nodes, nodesl, lvl, parent):
             if self.Type.struct in self.type:
                 return
@@ -696,7 +696,7 @@ class reliq():
                 i -= 1
         return self._axis(gen,from_nodes,type=type,rel=rel)
 
-    def siblings_subsequent(self, gen=False, type=reliqType.tag, full=False, rel=False) -> list['reliq']|Generator['reliq']:
+    def siblings_subsequent(self, gen=False, type=reliqType.tag, full=False, rel=False) -> list['reliq']|Generator['reliq',None,None]:
         def from_nodes(self, nodes, nodesl, lvl, parent):
             if self.Type.struct in self.type:
                 return
@@ -726,7 +726,7 @@ class reliq():
 
         return self._axis(gen,from_nodes,type=type,rel=rel)
 
-    def siblings(self, gen=False, type=reliqType.tag, full=False, rel=False) -> list['reliq']|Generator['reliq']:
+    def siblings(self, gen=False, type=reliqType.tag, full=False, rel=False) -> list['reliq']|Generator['reliq',None,None]:
         r = chain(
             self.siblings_preceding(True,type=type,full=full,rel=rel),
             self.siblings_subsequent(True,type=type,full=full,rel=rel),
