@@ -230,6 +230,8 @@ assert x[0][0].attribs['href'] == '/index.html'
 assert x[0][0].insides_raw == b"<li>\xf0\x9f\x8f\xa1 Home</li>"
 assert x[0][0].attribs_raw[b'href'] == b'/index.html'
 
+assert len(rq.filter('[0] dl style')[0].attribs['style']) == 15
+
 assert len(str(x)) == 3472
 assert len(x[0].children(type=None)) == 9
 assert len(x[0].self()) == 1

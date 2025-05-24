@@ -915,7 +915,7 @@ class reliq():
             a = _reliq_attrib_struct()
             libreliq.reliq_cattrib_conv(byref(self.struct.struct),attr+i*cattrib_sz,byref(a))
 
-            key = conv(a.key)
+            key = conv(a.key).lower()
             t = conv('')
             prev = ret.get(key)
             if prev is not None:
