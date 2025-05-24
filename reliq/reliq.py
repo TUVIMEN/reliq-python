@@ -899,7 +899,7 @@ class reliq():
             return 0
         return self.single.hnode.attribsl
 
-    def _attribs(self, raw: bool=False) -> dict:
+    def _attrib(self, raw: bool=False) -> dict:
         if self.type is not reliq.Type.tag:
             return {}
 
@@ -928,12 +928,12 @@ class reliq():
         return ret
 
     @property
-    def attribs(self) -> dict:
-        return self._attribs()
+    def attrib(self) -> dict:
+        return self._attrib()
 
     @property
-    def attribs_raw(self) -> dict:
-        return self._attribs(True)
+    def attrib_raw(self) -> dict:
+        return self._attrib(True)
 
     @property
     def type(self) -> Type:

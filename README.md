@@ -54,7 +54,7 @@ for i in rq.filter(r'table; { tr, text@ iw>lisp }')[:-2]:
     if first_child.child_count < 3 and first_child.name == "div" and first_child.starttag == '<div>':
         continue
 
-    link = first_child[2].attribs['href']
+    link = first_child[2].attrib['href']
     if re.match('^https://$',link):
         links.append(link)
         continue
@@ -245,11 +245,11 @@ Calling some properties makes sense only for certain types.
 
 `desc_count -> int` count of descendants
 
-`attribsl -> int` number of attributes
+`attribl -> int` number of attributes
 
 ----
 
-`attribs -> dict` dictionary of attributes
+`attrib -> dict` dictionary of attributes
 
 ----
 
