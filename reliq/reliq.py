@@ -894,7 +894,7 @@ class reliq():
         return (self.single.chnode-parent)//chnode_sz
 
     @property
-    def attribsl(self) -> int:
+    def attribl(self) -> int:
         if self.type is not reliq.Type.tag:
             return 0
         return self.single.hnode.attribsl

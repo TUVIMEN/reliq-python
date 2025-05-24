@@ -183,13 +183,13 @@ assert x[0].starttag_raw == b"<ul>"
 assert x[0].endtag_raw == b"</ul>"
 assert x[0].endtag_strip_raw == b"/ul"
 
-t = x[1].attribs
+t = x[1].attrib
 assert len(t.keys()) == 1 or t['href'] != '/index.html'
 
-t = x[1].attribs_raw
+t = x[1].attrib_raw
 assert len(t.keys()) == 1 or t[b'href'] != b'/index.html'
 
-assert x[1].attribsl == 1
+assert x[1].attribl == 1
 
 assert rq[0].text_count == 139
 assert rq[0].tag_count == 147
@@ -225,12 +225,12 @@ assert y[2].insides_raw == None
 
 x = rq.filter('ul',True)
 assert x[0][0].insides == "<li>🏡 Home</li>"
-assert x[0][0].attribs['href'] == '/index.html'
+assert x[0][0].attrib['href'] == '/index.html'
 
 assert x[0][0].insides_raw == b"<li>\xf0\x9f\x8f\xa1 Home</li>"
-assert x[0][0].attribs_raw[b'href'] == b'/index.html'
+assert x[0][0].attrib_raw[b'href'] == b'/index.html'
 
-assert len(rq.filter('[0] dl style')[0].attribs['style']) == 15
+assert len(rq.filter('[0] dl style')[0].attrib['style']) == 15
 
 assert len(str(x)) == 3472
 assert len(x[0].children(type=None)) == 9
