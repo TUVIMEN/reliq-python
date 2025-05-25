@@ -12,25 +12,25 @@ A python bindings for [reliq](https://github.com/TUVIMEN/reliq) library.
 
 ## Benchmark
 
-Benchmarks were inspired by (selectolax)[https://github.com/rushter/selectolax/blob/master/examples/benchmark.py] and performed on 355MB, 896 files sample of most popular websites. You can find the benchmark script [here](benchmark/benchmark.py).
+Benchmarks were inspired by [selectolax](https://github.com/rushter/selectolax/blob/master/examples/benchmark.py) and performed on 355MB, 896 files sample of most popular websites. You can find the benchmark script [here](benchmark/benchmark.py).
 
 ### Parsing
 
-  bs4: 74.24s
-  html5_parser: 12.79s
-  lxml: 5.77s
-  modest: 2.82s
-  lexbor: 1.37s
-  reliq: 0.53s
+    bs4: 74.24s
+    html5_parser: 12.79s
+    lxml: 5.77s
+    modest: 2.82s
+    lexbor: 1.37s
+    reliq: 0.53s
 
 ### Parsing and processing
 
-  bs4: 184.71s
-  html5_parser: 21.39s
-  lxml: 14.90s
-  modest: 4.24s
-  reliq: 3.05s
-  lexbor: 2.80s
+    bs4: 184.71s
+    html5_parser: 21.39s
+    lxml: 14.90s
+    modest: 4.24s
+    reliq: 3.05s
+    lexbor: 2.80s
 
 ## Usage
 
