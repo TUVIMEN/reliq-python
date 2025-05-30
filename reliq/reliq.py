@@ -83,6 +83,44 @@ class _reliq_compressed_struct(Structure):
     _fields_ = [("hnode",c_uint32),
                 ("parent",c_uintptr)]
 
+class _reliq_field_type_arg_union(Union):
+    _fields_ = [("s",_reliq_str_struct),
+                ("u",c_uint64),
+                ("i",c_int64),
+                ("d",c_double)]
+
+class _reliq_field_type_arg_struct(Structure):
+    _fields_ = [("v",_reliq_field_type_arg_union),
+                ("type",c_uint8)]
+
+class _reliq_field_type_struct(Structure):
+    pass
+
+_reliq_field_type_struct_fields_ = [("name",_reliq_str_struct),
+        ("args",POINTER(_reliq_field_type_arg_struct)),
+        ("subtypes",_reliq_field_type_struct),
+        ("argsl",c_size_t),
+        ("subtypesl",c_size_t)]
+
+class _reliq_field_struct(Structure):
+    _fields_ = [("name",_reliq_str_struct),
+                ("annotation",_reliq_str_struct),
+                ("types",POINTER(_reliq_field_type_struct)),
+                ("typesl",c_size_t),
+                ("isset",c_uint8)]
+
+class _reliq_scheme_field_struct(Structure):
+    _fields_ = [("field",POINTER(_reliq_field_struct)),
+                 ("lvl",c_uint16),
+                 ("type",c_uint8,2)]
+
+class _reliq_scheme_struct(Structure):
+    _fields_ = [("fields",POINTER(_reliq_scheme_field_struct)),
+                ("fieldsl",c_size_t),
+                ("leaking",c_uint8,1),
+                ("repeating",c_uint8,1)]
+
+
 class reliq_compressed_list():
     def __init__(self, nodes: c_void_p, compressed: POINTER(_reliq_compressed_struct), size: c_size_t):
         self.compressed = cast(compressed,POINTER(_reliq_compressed_struct))
@@ -282,6 +320,14 @@ libreliq_functions = [
         libreliq.reliq_encode_entities_str,
         None,
         [c_void_p,c_size_t,POINTER(c_void_p),POINTER(c_size_t),c_bool]
+    ),(
+        libreliq.reliq_scheme,
+        _reliq_scheme_struct,
+        [c_void_p]
+    ),(
+        libreliq.reliq_scheme_free,
+        None,
+        [POINTER(_reliq_scheme_struct)]
     )
 ]
 
@@ -309,23 +355,43 @@ class reliq_struct():
 
 class reliqExpr():
     def __init__(self,script: str|bytes|Path):
-        self.exprs = None
+        self.scheme = None
+        self.expr = None
         s = script
         if isinstance(script,Path):
             s = script.read_bytes()
         elif isinstance(script,str):
             s = script.encode("utf-8")
 
-        exprs = c_void_p()
-        err = libreliq.reliq_ecomp(cast(s,c_void_p),len(s),byref(exprs))
+        expr = c_void_p()
+        err = libreliq.reliq_ecomp(cast(s,c_void_p),len(s),byref(expr))
         if err:
             raise reliq._create_error(err)
 
-        self.exprs = exprs
+        self.expr = expr
+
+    def _get_scheme(self):
+        if self.expr is None:
+            return
+
+        scheme = libreliq.reliq_scheme(self.expr)
+        r = (scheme.leaking,scheme.repeating)
+        libreliq.reliq_scheme_free(byref(scheme))
+
+        return r
+
+    def correct_scheme(self):
+        if self.scheme is None:
+            self.scheme = self._get_scheme()
+
+        if self.scheme[0]:
+            raise reliq.ScriptError("expression is leaking")
+        if self.scheme[1]:
+            raise reliq.ScriptError("expression has repeating field names")
 
     def __del__(self):
-        if self.exprs is not None:
-            libreliq.reliq_efree(self.exprs)
+        if self.expr is not None:
+            libreliq.reliq_efree(self.expr)
 
 
 class reliq():
@@ -1034,11 +1100,10 @@ class reliq():
         libreliq.reliq_std_free(err,0)
         return ret
 
-    @staticmethod
-    def _convscript(script):
+    def _convscript(self,script):
         if isinstance(script,reliqExpr):
             return script
-        return reliqExpr(script)
+        return self.expr(script)
 
     def search(self, script: typing.Union[str,bytes,Path,reliqExpr], raw: bool=False) -> str|bytes:
         conv = lambda x: strconv(x,raw)
@@ -1048,7 +1113,7 @@ class reliq():
         if rtype in self.Type.empty|self.Type.unknown:
             return ret
 
-        exprs = self._convscript(script)
+        expr = self._convscript(script)
 
         src = c_void_p()
         srcl = c_size_t()
@@ -1078,7 +1143,7 @@ class reliq():
             input = self.compressed.compressed
             inputl = self.compressed.size
 
-        err = libreliq.reliq_exec_str(byref(struct),input,inputl,exprs.exprs,byref(src),byref(srcl))
+        err = libreliq.reliq_exec_str(byref(struct),input,inputl,expr.expr,byref(src),byref(srcl))
 
         if src:
             if not err:
@@ -1090,14 +1155,16 @@ class reliq():
         return ret
 
     def json(self, script: typing.Union[str,bytes,Path,reliqExpr]) -> dict:
-        return json.loads(self.search(script,raw=True))
+        expr = self.expr(script)
+        expr.correct_scheme()
+        return json.loads(self.search(expr,raw=True))
 
     def filter(self,script: typing.Union[str,bytes,Path,reliqExpr],independent: bool=False) -> "reliq":
         rtype = self.type
         if rtype in self.Type.empty|self.Type.unknown:
             return self
 
-        exprs = self._convscript(script)
+        expr = self._convscript(script)
 
         compressed = c_void_p()
         compressedl = c_size_t()
@@ -1122,7 +1189,7 @@ class reliq():
             input = self.compressed.compressed
             inputl = self.compressed.size
 
-        err = libreliq.reliq_exec(byref(struct),input,inputl,exprs.exprs,byref(compressed),byref(compressedl))
+        err = libreliq.reliq_exec(byref(struct),input,inputl,expr.expr,byref(compressed),byref(compressedl))
 
         if compressed:
             if not err:

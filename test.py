@@ -303,6 +303,19 @@ assert rq.search(rb'ul; [0] img | "%(src)v"') == "pix/git.svg"
 assert rq.search(r'ul; [0] img | "%(src)v"',raw=True) == b"pix/git.svg"
 
 assert rq.json('.r a c@[0]; { .name @ | "%Di" trim, .link @ | "%(href)v" } |')['r'][18]['link'] == 'pix/xmr.png'
+try:
+    rq.json('.r li, a')
+except reliq.ScriptError:
+    pass
+else:
+    assert 0
+try:
+    rq.json('.r li, .r a')
+except reliq.ScriptError:
+    pass
+else:
+    assert 0
+
 
 nav = rq.filter('nav')[0]
 n1 = nav[0].children(rel=True)[0]
