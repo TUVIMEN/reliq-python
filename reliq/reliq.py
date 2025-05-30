@@ -339,6 +339,10 @@ libreliq_functions = [
         libreliq.reliq_scheme_free,
         None,
         [POINTER(_reliq_scheme_struct)]
+    ),(
+        libreliq.reliq_set_url,
+        None,
+        [POINTER(_reliq_struct),c_char_p,c_size_t]
     )
 ]
 
@@ -1202,6 +1206,12 @@ class reliq():
         if err:
             raise reliq._create_error(err)
         return ret
+
+    def url(self,url):
+        if self.type is not reliq.Type.struct:
+            return
+        u = url.encode("utf-8")
+        libreliq.reliq_set_url(byref(self.struct.struct),u,len(u))
 
     def json(self, script: typing.Union[str,bytes,Path,reliqExpr]) -> dict:
         expr = self.expr(script)
