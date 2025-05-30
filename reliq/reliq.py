@@ -154,13 +154,24 @@ class reliq_single:
         self._hnode_d = None
         self.cparent = parent
         self._parent_d = None
-        self.rq = rq.struct.struct
+        self.rq = rq.struct
+
+    @property
+    def position(self):
+        return (self.chnode-self.rq.struct.nodes)//chnode_sz
+
+    @property
+    def rposition(self):
+        parent = self.cparent
+        if parent is None:
+            return self.position
+        return (self.chnode-parent)//chnode_sz
 
     @property
     def hnode(self):
         if self._hnode_d is not None:
             return self._hnode_d
-        self._hnode_d = chnode_conv(self.rq,self.chnode)
+        self._hnode_d = chnode_conv(self.rq.struct,self.chnode)
         return self._hnode_d
 
     @property
@@ -169,7 +180,7 @@ class reliq_single:
             return None
         if self._parent_d is not None:
             return self._parent_d
-        self._parent_d = chnode_conv(self.rq,self.cparent)
+        self._parent_d = chnode_conv(self.rq.struct,self.cparent)
         return self._parent_d
 
 class reliqType(Flag):
@@ -836,6 +847,42 @@ class reliq():
     def __str__(self):
         return bytes(self).decode()
 
+    def _repr_short_str(self, text,mx=20):
+        x = '"' + text[:mx] + '"'
+        if len(text) > 20:
+            x += "..."
+        return x
+
+    def __repr__(self):
+        t = self.type
+
+        if self.type is reliq.Type.empty:
+            return "<reliq Empty>"
+        if  reliq.Type.unknown in self.type:
+            return "<reliq Unknown>"
+        if self.type is reliq.Type.struct:
+            return "<reliq Struct {} nodes / {} bytes>".format(self.struct.struct.nodesl,self.struct.struct.datal)
+        if self.type is reliq.Type.list:
+            return "<reliq List {} nodes / {} bytes>".format(self.compressed.size.value,self.struct.struct.datal)
+
+        assert self.type in reliq.Type.single
+
+        hn = self.single.hnode
+        pos = self.single.position
+
+        if self.type is reliq.Type.tag:
+            return "<{} desc {} / pos {}>".format(str(hn.tag),hn.desc,pos)
+        if self.type is reliq.Type.comment:
+            return "<comment {} / pos {}>".format(self._repr_short_str(str(hn.all)),pos)
+        if self.type is reliq.Type.text:
+            return "<text {} / pos {}>".format(self._repr_short_str(str(hn.all).strip()),pos)
+        if self.type is reliq.Type.texterr:
+            return "<texterr {} / pos {}>".format(self._repr_short_str(str(hn.all).strip()),pos)
+        if self.type is reliq.Type.textempty:
+            return "<textempty size {} / pos {}>".format(hn.all.s,pos)
+
+        assert 0
+
     def _name(self, raw: bool=False) -> Optional[str|bytes]:
         if self.type is not reliq.Type.tag:
             return None
@@ -953,16 +1000,13 @@ class reliq():
     def position(self) -> int:
         if self.type not in reliq.Type.single:
             return 0
-        return (self.single.chnode-self.struct.struct.nodes)//chnode_sz
+        return self.single.position
 
     @property
     def rposition(self) -> int:
         if self.type not in reliq.Type.single:
             return 0
-        parent = self.single.cparent
-        if parent is None:
-            return (self.single.chnode-self.struct.struct.nodes)//chnode_sz
-        return (self.single.chnode-parent)//chnode_sz
+        return self.single.rposition
 
     @property
     def attribl(self) -> int:

@@ -7,7 +7,7 @@ import resource
 import json
 import gc
 from ctypes import *
-from reliq import *
+from reliq import reliq
 from memory_profiler import profile
 from functools import lru_cache
 from typing import Generator
@@ -211,11 +211,22 @@ assert x[0][0].insides_raw == b"<li>\xf0\x9f\x8f\xa1 Home</li>"
 assert x[0][0].name_raw == b"a"
 
 y = rq.full(type=None)
+
+assert repr(reliq()) == "<reliq Empty>"
+assert repr(rq) == "<reliq Struct 291 nodes / 6293 bytes>"
+assert repr(x) == "<reliq List 4 nodes / 6293 bytes>"
+
+assert repr(y[0]) == '<comment "<!DOCTYPE HTML>" / pos 0>'
 assert y[0].type in reliq.Type.comment
+assert repr(y[1]) == '<html desc 288 / pos 1>'
 assert y[1].type in reliq.Type.tag
+assert repr(y[2]) == '<textempty size 1 / pos 2>'
 assert y[2].type in reliq.Type.textempty
 assert y[2].type in reliq.Type.textall
 assert y[2].type not in reliq.Type.text
+assert repr(y[52]) == '<text "📧 Contact" / pos 52>'
+assert repr(reliq('   aaaaaaaaa a aaaaaaaaaaa  ').self(type=None)[0]) == '<text "aaaaaaaaa a aaaaaaaa"... / pos 0>'
+assert repr(reliq('k</').self(type=None)[0]) == '<texterr "k</" / pos 0>'
 
 assert y[0].insides == "DOCTYPE HTML"
 assert y[2].insides == None
