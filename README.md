@@ -123,7 +123,7 @@ from reliq import reliq
 
 ### Initialization
 
-`reliq` object takes a single argument representing html, this can be `str()`, `bytes()`, `Path()` (file is read as `bytes`), `reliq()` or `None`.
+`reliq` object takes an argument representing html, this can be `str()`, `bytes()`, `Path()` (file is read as `bytes`), `reliq()` or `None`.
 
 ```python
 rq = reliq('<p>Example</p>') #passed directly
@@ -132,6 +132,22 @@ rq2 = reliq(Path('index.html')) #passed from file
 
 rq3 = reliq(None) # empty object
 rq4 = reliq() # empty object
+```
+
+If optional argument `ref` is a string it'll set url to the first base tag in html structure, and in case there isn't any it'll be set to `ref`.
+
+```python
+rq = reliq('<p>Example</p>')
+rq.ref # None
+
+rq2 = reliq(b'<p>Second example</p>',ref="http://en.wikipedia.org")
+rq2.ref # http://en.wikipedia.org
+
+rq3 = reliq(b'<base href="https://wikipedia.org"><p>Second example</p>',ref="http://en.wikipedia.org")
+rq3.ref # https://wikipedia.org
+
+rq4 = reliq(b'<base href="https://wikipedia.org"><p>Second example</p>',ref="")
+rq4.ref # https://wikipedia.org
 ```
 
 ### Types
@@ -238,6 +254,16 @@ r[2] == first[1]
 #### \_\_len\_\_
 
 Amount of objects returned from `__getitem__`
+
+### ref and ref_raw
+
+They return saved reference url at initialization and return `None` if it doesn't exists. `ref_raw` returns `bytes`
+
+```python
+rq = reliq('',ref="http://en.wikipedia.org")
+rq.ref # "http://en.wikipedia.org"
+rq.ref_raw # b"http://en.wikipedia.org"
+```
 
 ### properties of single
 

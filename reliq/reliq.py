@@ -415,7 +415,7 @@ class reliqExpr():
 
 
 class reliq():
-    def __init__(self,html: Optional[typing.Union[str,bytes,Path,'reliq']] = None):
+    def __init__(self,html: Optional[typing.Union[str,bytes,Path,'reliq']]=None,ref: Optional[str|bytes]=None):
         if isinstance(html,reliq):
             self.data = html.data
             self.struct = html.struct
@@ -437,6 +437,12 @@ class reliq():
         if err:
             raise reliq._create_error(err)
         self.struct = reliq_struct(rq)
+
+        if isinstance(ref,str|bytes):
+            r = self._get_base()
+            if len(r) == 0:
+                r = strconv(ref,True)
+            self._set_url(r)
 
     expr = reliqExpr
     Type = reliqType
@@ -893,6 +899,22 @@ class reliq():
         return strconv(self.single.hnode.tag,raw)
 
     @property
+    def ref_raw(self):
+        if self._isempty:
+            return
+        url = self.struct.struct.url
+        if url.allocated == 0:
+            return
+        return bytes(url.url)
+
+    @property
+    def ref(self):
+        r = self.ref_raw
+        if r is None:
+            return
+        return r.decode()
+
+    @property
     def name_raw(self) -> Optional[bytes]:
         return self._name(True)
 
@@ -1207,11 +1229,13 @@ class reliq():
             raise reliq._create_error(err)
         return ret
 
-    def url(self,url):
+    def _get_base(self) -> bytes:
+        return self.search(r'[0] base href | "%(href)v"',raw=True)
+
+    def _set_url(self,url: bytes):
         if self.type is not reliq.Type.struct:
             return
-        u = url.encode("utf-8")
-        libreliq.reliq_set_url(byref(self.struct.struct),u,len(u))
+        libreliq.reliq_set_url(byref(self.struct.struct),url,len(url))
 
     def json(self, script: typing.Union[str,bytes,Path,reliqExpr]) -> dict:
         expr = self.expr(script)

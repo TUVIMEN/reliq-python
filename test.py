@@ -327,7 +327,6 @@ except reliq.ScriptError:
 else:
     assert 0
 
-
 nav = rq.filter('nav')[0]
 n1 = nav[0].children(rel=True)[0]
 n2 = nav[0].children()[0]
@@ -337,3 +336,11 @@ assert n1.rposition == 1
 assert n2.rposition == 2
 
 assert nav.ancestors()[1].rlvl == -2
+
+rq = reliq(html_data,ref="https://wikipedia.org")
+assert rq.json('.n.U [0] a | "%(href)v"')['n'] == 'https://wikipedia.org/index.html'
+assert rq.ref == "https://wikipedia.org"
+
+u = reliq('<base href="https://en.wikipedia.org"><a href="index.html">k</a>',ref="https://wikipedia.org")
+assert u.json('.n.U [0] a | "%(href)v"')['n'] == 'https://en.wikipedia.org/index.html'
+assert u.ref == "https://en.wikipedia.org"
