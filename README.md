@@ -905,6 +905,25 @@ nav_rel.rposition
 # -7
 ```
 
+### Project wrapper
+
+Expressions can grow into considerable sizes so it's beneficial to save them in separate directories and cache them. `RQ` function returns a new `reliq` type that keeps track of cache and directory of the script that has called this function.
+
+```
+from reliq import RQ
+
+reliq = RQ(cached=True)
+
+rq = reliq('<p>Alive!</p>')
+print(rq)
+```
+
+It takes two optional arguments `def RQ(path="", cached=False)`. If `cached` is set, compiled expressions will be saved and reused.
+
+If `path` is not an absolute path it will be merged with directory of the calling function. When in any function that takes expression argument a `Path()` is passed it will be relative to first declared `path` argument. Exceptions to that are paths that are absolute or begin with `./` or `../`.
+
+This function should be used by packages to save reliq expressions under their directories without polluting the general `reliq` object space. After the first declaration of this type it should be reused everywhere in project.
+
 ## Projects using reliq in python
 
 - [forumscraper](https://github.com/TUVIMEN/forumscraper)

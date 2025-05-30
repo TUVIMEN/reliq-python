@@ -354,14 +354,19 @@ class reliq_struct():
         libreliq.reliq_free(byref(self.struct))
 
 class reliqExpr():
+    @staticmethod
+    def tobytes(x):
+        if isinstance(x,Path):
+            x = x.read_bytes()
+        elif isinstance(x,str):
+            x = x.encode("utf-8")
+        return x
+
     def __init__(self,script: str|bytes|Path):
+        s = self.tobytes(script)
+
         self.scheme = None
         self.expr = None
-        s = script
-        if isinstance(script,Path):
-            s = script.read_bytes()
-        elif isinstance(script,str):
-            s = script.encode("utf-8")
 
         expr = c_void_p()
         err = libreliq.reliq_ecomp(cast(s,c_void_p),len(s),byref(expr))
