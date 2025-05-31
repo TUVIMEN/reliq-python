@@ -343,6 +343,18 @@ libreliq_functions = [
         libreliq.reliq_set_url,
         None,
         [POINTER(_reliq_struct),c_char_p,c_size_t]
+    ),(
+        libreliq.reliq_url_parse,
+        None,
+        [c_char_p,c_size_t,c_char_p,c_size_t,c_bool,POINTER(_reliq_url_struct)]
+    ),(
+        libreliq.reliq_url_join,
+        None,
+        [POINTER(_reliq_url_struct),POINTER(_reliq_url_struct),POINTER(_reliq_url_struct)]
+    ),(
+        libreliq.reliq_url_free,
+        None,
+        [POINTER(_reliq_url_struct)]
     )
 ]
 
@@ -440,9 +452,7 @@ class reliq():
 
         if isinstance(ref,str|bytes):
             r = self._get_base()
-            if len(r) == 0:
-                r = strconv(ref,True)
-            self._set_url(r)
+            self._set_url(r,strconv(ref,True))
 
     expr = reliqExpr
     Type = reliqType
@@ -1232,13 +1242,22 @@ class reliq():
     def _get_base(self) -> bytes:
         return self.search(r'[0] base href | "%(href)v"',raw=True)
 
-    def _set_url(self,url: bytes):
+    def _set_url(self,url: bytes, ref: bytes):
         if self.type is not reliq.Type.struct:
             return
-        libreliq.reliq_set_url(byref(self.struct.struct),url,len(url))
+
+        r = _reliq_url_struct()
+        libreliq.reliq_url_parse(ref,len(ref),None,0,False,byref(r))
+
+        u = byref(self.struct.struct.url)
+        libreliq.reliq_url_parse(url,len(url),cast(r.scheme.b,c_char_p),r.scheme.s,True,u)
+
+        libreliq.reliq_url_join(byref(r),u,u)
+
+        libreliq.reliq_url_free(byref(r))
 
     def json(self, script: typing.Union[str,bytes,Path,reliqExpr]) -> dict:
-        expr = self.expr(script)
+        expr = self._convscript(script)
         expr.correct_scheme()
         return json.loads(self.search(expr,raw=True))
 

@@ -344,3 +344,5 @@ assert rq.ref == "https://wikipedia.org"
 u = reliq('<base href="https://en.wikipedia.org"><a href="index.html">k</a>',ref="https://wikipedia.org")
 assert u.json('.n.U [0] a | "%(href)v"')['n'] == 'https://en.wikipedia.org/index.html'
 assert u.ref == "https://en.wikipedia.org"
+
+assert reliq('<base href="/loop" >',ref="https://g.xyz/").ref == 'https://g.xyz/loop'

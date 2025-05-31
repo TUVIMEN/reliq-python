@@ -38,7 +38,7 @@ def RQ(path="",cached=False):
             if r is not None:
                 return r
 
-            expr = super.__init__(x)
+            expr = super().__init__(x)
             expressions[x] = expr
             return expr
 
