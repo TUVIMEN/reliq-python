@@ -5,6 +5,7 @@
 import os
 from pathlib import Path
 import inspect
+from threading import Lock
 
 from .reliq import reliq, reliqExpr
 
@@ -16,11 +17,9 @@ def RQ(path="",cached=False):
     if path[:1] != "/":
         basepath = os.path.realpath(os.path.dirname(inspect.stack()[1].filename))
         path = os.path.realpath(basepath + "/" + path)
+    path = Path(path)
 
-    expr_env = {
-        "cached": cached,
-        "path": Path(path)
-    }
+    lock = Lock() if cached else None
 
     class rqExpr(reliqExpr):
         def __init__(self,script: str|bytes|Path):
@@ -29,9 +28,9 @@ def RQ(path="",cached=False):
             if isinstance(x,Path):
                 s = str(x)
                 if s[:1] != '/' and s[:2] != "./" and s[:3] != '../':
-                    x = Path(os.path.realpath(expr_env['path'] / x))
+                    x = Path(os.path.realpath(path / x))
 
-            if not expr_env['cached']:
+            if not cached:
                 return super().__init__(x)
 
             r = expressions.get(x)
@@ -39,7 +38,8 @@ def RQ(path="",cached=False):
                 return r
 
             expr = super().__init__(x)
-            expressions[x] = expr
+            with lock:
+                expressions[x] = expr
             return expr
 
     rq.expr = rqExpr
