@@ -428,8 +428,22 @@ class reliqExpr():
 
 class reliq():
     @classmethod
-    def _new(cls,html=None,ref=None):
-        return cls(html=html,ref=ref)
+    def _new(cls,html):
+        return cls(html)
+
+    @classmethod
+    def _init_independent(cls,data,struct,ref):
+        ret = cls(None,ref=ref)
+        ret.data = data
+        ret.struct = struct
+        return ret
+
+    @classmethod
+    def _init_single(cls, self, hnode: c_void_p, parent: c_void_p) -> 'reliq':
+        ret = cls(self)
+        ret.compressed = None
+        ret.single = reliq_single(ret,hnode,parent)
+        return ret
 
     def __init__(self,html: Optional[typing.Union[str,bytes,Path,'reliq']]=None,ref: Optional[str|bytes]=None):
         if isinstance(html,reliq):
@@ -472,17 +486,6 @@ class reliq():
 
     class SystemError(Error):
         pass
-
-
-    @classmethod
-    def _init_single(cls, data: reliq_str, struct: reliq_struct, hnode: c_void_p, parent: c_void_p) -> 'reliq':
-        ret = cls(None)
-        ret.data = data
-        ret.struct = struct
-        ret.single = None
-        if hnode is not None:
-            ret.single = reliq_single(ret,hnode,parent)
-        return ret
 
     def _elnodes(self) -> Tuple[Optional[c_void_p],int,int,Optional[c_void_p]]:
         rtype = self.type
@@ -583,7 +586,7 @@ class reliq():
         def from_nodes(self, nodes, nodesl, lvl, parent):
             i = 0
             while i < nodesl:
-                n = self._init_single(self.data,self.struct,nodes+i*chnode_sz,parent)
+                n = self._init_single(self,nodes+i*chnode_sz,parent)
                 i += n.single.hnode.desc+1
                 yield n
 
@@ -601,7 +604,7 @@ class reliq():
                 hn = chnode_conv(self.struct.struct,node)
 
                 if hn.lvl == lvl:
-                    n = self._init_single(self.data,self.struct,node,parent)
+                    n = self._init_single(self,node,parent)
                     i += hn.desc+1
                     yield n
                 else:
@@ -618,7 +621,7 @@ class reliq():
                 hn = chnode_conv(self.struct.struct,node)
 
                 if hn.lvl > lvl:
-                    yield self._init_single(self.data,self.struct,node,parent)
+                    yield self._init_single(self,node,parent)
                 i += 1
             return ret
 
@@ -632,7 +635,7 @@ class reliq():
                 hn = chnode_conv(self.struct.struct,node)
 
                 if hn.lvl >= lvl:
-                    yield self._init_single(self.data,self.struct,node,parent)
+                    yield self._init_single(self,node,parent)
                 i += 1
 
         return self._axis(gen,from_nodes,type=type,rel=rel)
@@ -645,7 +648,7 @@ class reliq():
             while i < nodesl:
                 node = nodes+i*chnode_sz
                 hn = chnode_conv(self.struct.struct,node)
-                yield self._init_single(self.data,self.struct,node,parent)
+                yield self._init_single(self,node,parent)
                 i += 1
 
         return self._axis(gen,from_nodes,type=type,rel=rel)
@@ -653,7 +656,7 @@ class reliq():
     def rparent(self, gen=False, type=reliqType.tag) -> list['reliq']|Generator['reliq',None,None]:
         def from_nodes(self, nodes, nodesl, lvl, parent):
             if parent is not None:
-                yield self._init_single(self.data,self.struct,parent,nodes)
+                yield self._init_single(self,parent,nodes)
 
         return self._axis(gen,from_nodes,type=type)
 
@@ -677,7 +680,7 @@ class reliq():
                 return
             p, lvl = self._find_parent(nodes,lvl)
             if p:
-                yield self._init_single(self.data,self.struct,p,parent)
+                yield self._init_single(self,p,parent)
 
         return self._axis(gen,from_nodes,type=type,rel=rel)
 
@@ -693,7 +696,7 @@ class reliq():
                 if node is None:
                     break
 
-                yield self._init_single(self.data,self.struct,node,parent)
+                yield self._init_single(self,node,parent)
 
         return self._axis(gen,from_nodes,type=type,rel=rel)
 
@@ -707,7 +710,7 @@ class reliq():
             i = (node-nodes)//chnode_sz-1
             while True:
                 node = nodes+i*chnode_sz
-                yield self._init_single(self.data,self.struct,node,parent)
+                yield self._init_single(self,node,parent)
                 if i == 0:
                     break
                 i -= 1
@@ -736,7 +739,7 @@ class reliq():
                     i -= 1
                     continue
 
-                yield self._init_single(self.data,self.struct,node,parent)
+                yield self._init_single(self,node,parent)
 
                 if i == 0:
                     break
@@ -755,7 +758,7 @@ class reliq():
             i = (node-nodes)//chnode_sz+1
             while i < nodesl:
                 node = nodes+i*chnode_sz
-                yield self._init_single(self.data,self.struct,node,parent)
+                yield self._init_single(self,node,parent)
                 i += 1
 
         return self._axis(gen,from_nodes,type=type,rel=rel)
@@ -772,7 +775,7 @@ class reliq():
             i = (node-nodes)//chnode_sz+hn.desc+1
             while i < nodesl:
                 node = nodes+i*chnode_sz
-                yield self._init_single(self.data,self.struct,node,parent)
+                yield self._init_single(self,node,parent)
                 i += 1
 
         return self._axis(gen,from_nodes,type=type,rel=rel)
@@ -795,7 +798,7 @@ class reliq():
                     break
 
                 if full or hn.lvl == lvl:
-                    yield self._init_single(self.data,self.struct,node,parent)
+                    yield self._init_single(self,node,parent)
 
                 if i == 0:
                     break
@@ -823,7 +826,7 @@ class reliq():
                     break
 
                 node = nodes+i*chnode_sz
-                yield self._init_single(self.data,self.struct,node,parent)
+                yield self._init_single(self,node,parent)
 
                 if full:
                     i += 1
@@ -1302,14 +1305,14 @@ class reliq():
                 if independent:
                     nstruct = reliq_struct(libreliq.reliq_from_compressed_independent(compressed,compressedl,byref(struct)))
                     data = reliq_str(nstruct.struct.data,nstruct.struct.datal)
-                    ret = self._init_single(data,nstruct,None,None)
+                    ret = self._init_independent(data,nstruct,self.ref)
 
                     libreliq.reliq_std_free(compressed,0)
                 else:
                     ret = self._new(self)
                     ret.compressed = reliq_compressed_list(struct.nodes,compressed,compressedl)
         else:
-            ret = reliq(None)
+            ret = self._new(None)
             libreliq.reliq_std_free(compressed,0)
 
         if err:
