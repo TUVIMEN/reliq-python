@@ -345,6 +345,8 @@ def test_basic():
     rq = reliq(html_data,ref="https://wikipedia.org")
     assert rq.json('.n.U [0] a | "%(href)v"')['n'] == 'https://wikipedia.org/index.html'
     assert rq.ref == "https://wikipedia.org"
+    assert rq.ujoin('index.html/../name') == "https://wikipedia.org/name"
+    assert rq.urljoin('https://wikipedia.org','index.html/../name') == "https://wikipedia.org/name"
 
     u = reliq('<base href="https://en.wikipedia.org"><a href="index.html">k</a>',ref="https://wikipedia.org")
     assert u.json('.n.U [0] a | "%(href)v"')['n'] == 'https://en.wikipedia.org/index.html'

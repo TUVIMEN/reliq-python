@@ -380,17 +380,20 @@ class reliq_struct():
     def __del__(self):
         libreliq.reliq_free(byref(self.struct))
 
+def tobytes(text: bytes|str, encoding="utf-8") -> bytes:
+    if isinstance(text,bytes):
+        return text
+    return text.encode(encoding)
+
 class reliqExpr():
     @staticmethod
-    def tobytes(x):
+    def scriptbytes(x):
         if isinstance(x,Path):
-            x = x.read_bytes()
-        elif isinstance(x,str):
-            x = x.encode("utf-8")
-        return x
+            return x.read_bytes()
+        return tobytes(x)
 
     def __init__(self,script: str|bytes|Path):
-        s = self.tobytes(script)
+        s = self.scriptbytes(script)
 
         self.scheme = None
         self.expr = None
@@ -1253,15 +1256,57 @@ class reliq():
         if self.type is not self.Type.struct:
             return
 
-        r = _reliq_url_struct()
-        libreliq.reliq_url_parse(ref,len(ref),None,0,False,byref(r))
+        ref_struct = _reliq_url_struct()
+        libreliq.reliq_url_parse(ref,len(ref),None,0,False,byref(ref_struct))
 
-        u = byref(self.struct.struct.url)
-        libreliq.reliq_url_parse(url,len(url),cast(r.scheme.b,c_char_p),r.scheme.s,True,u)
+        url_struct = byref(self.struct.struct.url)
+        libreliq.reliq_url_parse(url,len(url),cast(ref_struct.scheme.b,c_char_p),ref_struct.scheme.s,True,url_struct)
 
-        libreliq.reliq_url_join(byref(r),u,u)
+        libreliq.reliq_url_join(byref(ref_struct),url_struct,url_struct)
 
-        libreliq.reliq_url_free(byref(r))
+        libreliq.reliq_url_free(byref(ref_struct))
+
+    @staticmethod
+    def urljoin(ref: bytes|str, url: bytes|str, raw=False) -> str|bytes:
+        url = tobytes(url)
+        ref = tobytes(ref)
+
+        ref_struct = _reliq_url_struct()
+        libreliq.reliq_url_parse(ref,len(ref),None,0,False,byref(ref_struct))
+
+        url_struct = _reliq_url_struct()
+        libreliq.reliq_url_parse(url,len(url),cast(ref_struct.scheme.b,c_char_p),ref_struct.scheme.s,False,byref(url_struct))
+
+        libreliq.reliq_url_join(byref(ref_struct),byref(url_struct),byref(url_struct))
+
+        ret = bytes(url_struct.url)
+
+        libreliq.reliq_url_free(byref(ref_struct))
+        libreliq.reliq_url_free(byref(url_struct))
+
+        return strconv(ret,raw)
+
+    def ujoin(self, url: bytes|str, raw=False) -> Optional[str|bytes]:
+        if self.type is not self.Type.struct:
+            return
+
+        ref_struct = self.struct.struct.url
+
+        if ref_struct.allocated == 0:
+            return
+
+        url = tobytes(url)
+        url_struct = _reliq_url_struct()
+
+        libreliq.reliq_url_parse(url,len(url),cast(ref_struct.scheme.b,c_char_p),ref_struct.scheme.s,False,byref(url_struct))
+        libreliq.reliq_url_join(byref(ref_struct),byref(url_struct),byref(url_struct))
+
+        ret = bytes(url_struct.url)
+
+        libreliq.reliq_url_free(byref(url_struct))
+
+        return strconv(ret,raw)
+
 
     def json(self, script: typing.Union[str,bytes,Path,reliqExpr]) -> dict:
         expr = self._convscript(script)
