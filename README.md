@@ -845,6 +845,12 @@ reliq.encode("<p>li &amp; \t 'seq' \n </p>",True,full=True)
 # b'&lt;p&gt;li &amp;amp&semi; &Tab; &#x27;seq&#x27; &NewLine; &lt;&sol;p&gt;'
 ```
 
+### URLS
+
+`urljoin` work like `urllib.parse.urljoin` but it can take argument's in `bytes` and returns `str` or `bytes` depending on `raw` argument.
+
+`ujoin` works the same way as `urljoin` but `ref` argument is set to default reference url in structure.
+
 ### Errors
 
 All errors are instances of `reliq.Error`.
