@@ -1284,7 +1284,7 @@ class reliq():
         return strconv(ret,raw)
 
     def ujoin(self, url: bytes|str, raw=False) -> str|bytes:
-        if self.type is not self.Type.struct:
+        if self._isempty:
             return strconv("",raw)
         ref_struct = self.struct.struct.url
         if ref_struct.allocated == 0:
