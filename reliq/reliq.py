@@ -919,20 +919,17 @@ class reliq():
         return strconv(self.single.hnode.tag,raw)
 
     @property
-    def ref_raw(self):
+    def ref_raw(self) -> bytes:
         if self._isempty:
-            return
+            return b""
         url = self.struct.struct.url
         if url.allocated == 0:
-            return
+            return b""
         return bytes(url.url)
 
     @property
-    def ref(self):
-        r = self.ref_raw
-        if r is None:
-            return
-        return r.decode()
+    def ref(self) -> str:
+        return self.ref_raw.decode()
 
     @property
     def name_raw(self) -> Optional[bytes]:

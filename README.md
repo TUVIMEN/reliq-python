@@ -253,7 +253,11 @@ Amount of objects returned from `__getitem__`
 
 ### ref and ref_raw
 
-They return saved reference url at initialization and return `None` if it doesn't exists. `ref_raw` returns `bytes`
+`ref -> str`
+
+`ref_raw -> bytes`
+
+They return saved reference url at initialization.
 
 ```python
 rq = reliq('',ref="http://en.wikipedia.org")
