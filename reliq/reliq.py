@@ -1283,14 +1283,12 @@ class reliq():
 
         return strconv(ret,raw)
 
-    def ujoin(self, url: bytes|str, raw=False) -> Optional[str|bytes]:
+    def ujoin(self, url: bytes|str, raw=False) -> str|bytes:
         if self.type is not self.Type.struct:
-            return
-
+            return strconv("",raw)
         ref_struct = self.struct.struct.url
-
         if ref_struct.allocated == 0:
-            return
+            return strconv("",raw)
 
         url = tobytes(url)
         url_struct = _reliq_url_struct()
