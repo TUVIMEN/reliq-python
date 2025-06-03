@@ -6,10 +6,6 @@ A python bindings for [reliq](https://github.com/TUVIMEN/reliq) library.
 
     pip install reliq
 
-## Import
-
-    from reliq import reliq
-
 ## Benchmark
 
 Benchmarks were inspired by [selectolax](https://github.com/rushter/selectolax/blob/master/examples/benchmark.py) and performed on 355MB, 896 files sample of most popular websites. You can find the benchmark script [here](benchmark/benchmark.py).
@@ -103,22 +99,22 @@ print(rq[2].text)
 #decode html entities
 reliq.decode('loop &amp; &lt &tdot; &#212')
 
-#convert to json
+#execute and convert to json
 rq.json(r"""
     .files * #files; ( li )( span .head ); {
         .type i class child@ | "%(class)v" / sed "s/^flaticon-//",
         .name @ | "%Dt" / trim sed "s/ ([^)]* [a-zA-Z][Bb])$//",
         .size @ | "%t" / sed 's/.* \(([^)]* [a-zA-Z][Bb])\)$/\1/; s/,//g; /^[0-9].* [a-zA-Z][bB]$/!d' "E"
     } |
-""") #json format is not enforced, so incorrect script will raise exceptions from json.loads()
+""") #json format is enforced and any incompatible expressions will raise reliq.ScriptError
 ```
 
 ### Import
 
-Everything is contained inside one class
+Most is contained inside `reliq` class
 
 ```python
-from reliq import reliq
+from reliq import reliq, RQ
 ```
 
 ### Initialization
@@ -185,7 +181,7 @@ The type itself is a grouping of more specific types:
  - tag
  - comment
  - textempty (text made only of whitespaces)
- - texterr (text where an html error occured)
+ - texterr (text where an html error occurred)
  - text
  - textall (grouping of text types)
 
@@ -758,7 +754,7 @@ rq.search(Path('expression.reliq'))
 
 ### json
 
-Same as `search()` but returns `dict()`.
+Similar to `search()` but returns `dict()` while validating expression.
 
 ### filter
 
@@ -863,7 +859,7 @@ All errors are instances of `reliq.Error`.
 
 ```python
 try:
-  reliq('<div>'*8193)
+  reliq('<div>'*8193) # 8192 passes :D
 except reliq.HtmlError:
   print('html depth limit exceeded')
 
