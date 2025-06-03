@@ -937,7 +937,7 @@ nav_rel.rposition
 
 Expressions can grow into considerable sizes so it's beneficial to save them in separate directories and cache them. `RQ` function returns a new `reliq` type that keeps track of cache and directory of the script that has called this function.
 
-```
+```python
 from reliq import RQ
 
 reliq = RQ(cached=True)
