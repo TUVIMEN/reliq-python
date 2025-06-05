@@ -132,8 +132,12 @@
           }
         },
         {
+          "name": "Download strptime",
+          "run": "curl 'https://raw.githubusercontent.com/msys2/MINGW-packages/refs/heads/master/mingw-w64-libkml/strptime.c' > reliq-c/src/strptime.c\n"
+        },
+        {
           "name": "Build reliq",
-          "run": "make -C reliq-c clean lib -j4 CFLAGS='-O3' LDFLAGS='/ucrt64/lib/libgnurx.a'\nmv reliq-c/libreliq.so reliq/\n"
+          "run": "make -C reliq-c clean lib -j4 CFLAGS='-O3' LDFLAGS='/ucrt64/lib/libgnurx.a' LIB_OTHERS='src/strptime.c'\nmv reliq-c/libreliq.so reliq/\n"
         },
         {
           "name": "Build wheel",
