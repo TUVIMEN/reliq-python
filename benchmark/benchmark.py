@@ -29,6 +29,8 @@ import sys
 from typing import Optional
 from pathlib import Path
 from dataclasses import dataclass
+import gc
+import psutil
 
 from bs4 import BeautifulSoup
 from html5_parser import parse
@@ -66,7 +68,7 @@ def bs4_test(page, parseonly=False):
     # tree = BeautifulSoup(page, "lxml")
 
     if parseonly:
-        return
+        return tree
 
     # 1
     title = tree.title.string
@@ -94,14 +96,16 @@ def bs4_test(page, parseonly=False):
         # popular_classes += len(tree.find_all(class=i))
         popular_classes += len(tree.select("." + i))
 
-    return test_result(title, href_amount, script_amount, description, popular_classes)
+    return tree, test_result(
+        title, href_amount, script_amount, description, popular_classes
+    )
 
 
 def html5_test(page, parseonly=False):
     tree = parse(page)
 
     if parseonly:
-        return
+        return tree
 
     # 1
     title = tree.xpath("//title/text()")[0]
@@ -132,14 +136,16 @@ def html5_test(page, parseonly=False):
             )
         )
 
-    return test_result(title, href_amount, script_amount, description, popular_classes)
+    return tree, test_result(
+        title, href_amount, script_amount, description, popular_classes
+    )
 
 
 def lxml_test(page, parseonly=False):
     tree = fromstring(page)
 
     if parseonly:
-        return
+        return tree
 
     # 1
     title = tree.xpath("//title/text()")[0]
@@ -169,14 +175,16 @@ def lxml_test(page, parseonly=False):
             )
         )
 
-    return test_result(title, href_amount, script_amount, description, popular_classes)
+    return tree, test_result(
+        title, href_amount, script_amount, description, popular_classes
+    )
 
 
 def selectolax_test(page, parseonly=False, lexbor=False):
     tree = LexborHTMLParser(page) if lexbor else HTMLParser(page)
 
     if parseonly:
-        return
+        return tree
 
     # 1
     title = None
@@ -213,14 +221,16 @@ def selectolax_test(page, parseonly=False, lexbor=False):
         )
     )
 
-    return test_result(title, href_amount, script_amount, description, popular_classes)
+    return tree, test_result(
+        title, href_amount, script_amount, description, popular_classes
+    )
 
 
 def reliq_test(page, parseonly=False):
     tree = reliq(page)
 
     if parseonly:
-        return
+        return tree
 
     # 1
     title = tree.search(r'[0] title | "%Ui" decode "e"')
@@ -246,7 +256,9 @@ def reliq_test(page, parseonly=False):
         )
     )
 
-    return test_result(title, href_amount, script_amount, description, popular_classes)
+    return tree, test_result(
+        title, href_amount, script_amount, description, popular_classes
+    )
 
 
 def tests_check_results(r):
@@ -279,21 +291,63 @@ def compare_tests(pages, testers):
             print(path)
 
 
-def run_tests_r(pages, testers, parseonly=False):
+def run_tests_time(pages, tester, name, parseonly):
+    start = time.time()
+
+    for path, page in pages:
+        tester(page, parseonly)
+
+    diff = time.time() - start
+    print("{}: {:0.3f}s".format(name, diff))
+
+
+def memusage():
+    gc.collect()
+    return psutil.Process(os.getpid()).memory_info().rss // 1024**2
+
+
+def run_tests_memory(pages, tester, name, parseonly):
+    start = memusage()
+
+    acc = []
+    for path, page in pages:
+        acc.append(tester(page))
+
+    diff = memusage() - start
+    print("{}: {}MB".format(name, diff))
+
+
+def run_test_memory(pages, tester, name, parseonly):
+    pid = os.fork()
+
+    if pid > 0:
+        os.wait()
+    elif pid == 0:
+        run_tests_memory(pages, tester, name, parseonly)
+        exit()
+
+
+def run_tests_r(pages, testers, parseonly=False, memory=False):
+    func = run_test_memory if memory else run_tests_time
     for name, tester in testers:
-        start = time.time()
-
-        for path, page in pages:
-            tester(page, parseonly=parseonly)
-
-        print("{}: {}".format(name, time.time() - start))
+        func(pages, tester, name, parseonly)
 
 
 def run_tests(pages, testers):
     print("########### parse")
-    run_tests_r(pages, testers, True)
+    run_tests_r(pages, testers, True, False)
+    print()
+    print("########### memory usage - parse")
+    run_tests_r(pages, testers, True, True)
+    print()
+
     print("########### parse and process")
-    run_tests_r(pages, testers, False)
+    run_tests_r(pages, testers, False, False)
+    print()
+
+    # print("########### mem - parse and process")
+    # run_tests_r(pages, testers, False, True)
+    # print()
 
 
 def load_files(path):
@@ -303,7 +357,7 @@ def load_files(path):
             continue
         with open(i.path, "r") as f:
             try:
-                ret.append((i.path, f.read()))
+                ret.append((i.path, f.read().encode("utf-8")))
             except:
                 pass
     return ret
