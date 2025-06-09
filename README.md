@@ -12,30 +12,36 @@ Benchmarks were inspired by [selectolax](https://github.com/rushter/selectolax/b
 
 ### Parsing
 
-    bs4: 121.615s
-    html5_parser: 22.424s
-    lxml: 4.955s
-    modest: 2.901s
-    lexbor: 1.200s
-    reliq: 0.310s
+| Package             | Time     |
+| --------------      | ----     |
+| bs4                 | 121.615s |
+| html5-parser        | 22.424s  |
+| lxml                | 4.955s   |
+| selectolax (modest) | 2.901s   |
+| selectolax (lexbor) | 1.200s   |
+| reliq               | 0.310s   |
 
 ### Collective memory usage of parsed trees
 
-    bs4: 2234MB
-    lexbor: 1666MB
-    modest: 1602MB
-    lxml: 1274MB
-    html5_parser: 1262MB
-    reliq: 58MB
+| Package             | Memory |
+| --------------      | ----   |
+| bs4                 | 2234MB |
+| selectolax (lexbor) | 1666MB |
+| selectolax (modest) | 1602MB |
+| lxml                | 1274MB |
+| html5-parser        | 1262MB |
+| reliq               | 58MB   |
 
 ### Parsing and processing
 
-    bs4: 230.661s
-    html5_parser: 31.138s
-    lxml: 14.010s
-    modest: 4.291s
-    reliq: 2.974s
-    lexbor: 2.628s
+| Package             | Time     |
+| --------------      | ----     |
+| bs4                 | 230.661s |
+| html5-parser        | 31.138s  |
+| lxml                | 14.010s  |
+| selectolax (modest) | 4.291s   |
+| reliq               | 2.974s   |
+| selectolax (lexbor) | 2.628s   |
 
 ## Usage
 
