@@ -80,7 +80,7 @@ for i in rq.filter(r'table; { tr, text@ iw>lisp }')[:-2]:
 
     first_child = i[0]
 
-    if first_child.child_count < 3 and first_child.name == "div" and first_child.starttag == '<div>':
+    if first_child.desc_count < 3 and first_child.name == "div" and first_child.starttag == '<div>':
         continue
 
     link = first_child[2].attrib['href']
