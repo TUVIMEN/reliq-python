@@ -102,7 +102,7 @@ for i in rq.filter(r'table; { tr, text@ iw>lisp }')[:-2]:
     users.append(user)
 
 try: #handle errors
-    reliq.search('p / /','<p></p>')
+    rq.search('p / /','<p></p>')
 except reliq.ScriptError: # all errors inherit from reliq.Error
     print("error")
 
@@ -114,14 +114,14 @@ print(rq[2].text)
 #decode html entities
 reliq.decode('loop &amp; &lt &tdot; &#212')
 
-#execute and convert to json
+#execute and convert to dictionary
 rq.json(r"""
     .files * #files; ( li )( span .head ); {
         .type i class child@ | "%(class)v" / sed "s/^flaticon-//",
         .name @ | "%Dt" / trim sed "s/ ([^)]* [a-zA-Z][Bb])$//",
         .size @ | "%t" / sed 's/.* \(([^)]* [a-zA-Z][Bb])\)$/\1/; s/,//g; /^[0-9].* [a-zA-Z][bB]$/!d' "E"
     } |
-""") #json format is enforced and any incompatible expressions will raise reliq.ScriptError
+""") #dict format is enforced and any incompatible expressions will raise reliq.ScriptError
 ```
 
 ### Import
