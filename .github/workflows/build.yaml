@@ -69,7 +69,7 @@
           "uses": "actions/upload-artifact@v4",
           "with": {
             "name": "wheel-linux-x86",
-            "path": "out/*"
+            "path": "dist/*"
           }
         }
       ]
@@ -108,7 +108,7 @@
           "uses": "actions/upload-artifact@v4",
           "with": {
             "name": "wheel-linux-${{ matrix.arch }}",
-            "path": "out/*"
+            "path": "dist/*"
           }
         }
       ]
@@ -152,7 +152,7 @@
           "uses": "actions/upload-artifact@v4",
           "with": {
             "name": "wheel-windows",
-            "path": "out/*"
+            "path": "dist/*"
           }
         }
       ]
@@ -195,7 +195,7 @@
           "uses": "actions/upload-artifact@v4",
           "with": {
             "name": "wheel-macos-${{ matrix.os }}",
-            "path": "out/*"
+            "path": "dist/*"
           }
         }
       ]

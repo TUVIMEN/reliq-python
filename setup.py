@@ -30,7 +30,16 @@ def compile():
     if c_os == "windows":
         others = ["LDFLAGS='/ucrt64/lib/libgnurx.a'", "LIB_OTHERS='src/strptime.c'"]
     subprocess.check_call(
-        ["make", "-C", "reliq-c", "clean", "lib", "-j4", 'CFLAGS="-O3"', *others]
+        [
+            "make",
+            "-C",
+            "reliq-c",
+            "clean",
+            "lib",
+            "-j" + str(os.cpu_count()),
+            'CFLAGS="-O3"',
+            *others,
+        ]
     )
     os.rename("reliq-c/libreliq.so", "reliq/libreliq.so")
 
