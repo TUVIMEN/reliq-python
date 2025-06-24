@@ -5,7 +5,7 @@
   },
   "jobs": {
     "build-source": {
-      "runs-on": "ubuntu-22.04",
+      "runs-on": "ubuntu-24.04",
       "steps": [
         {
           "uses": "actions/checkout@v4",
@@ -22,8 +22,12 @@
           }
         },
         {
+          "name": "Prepare",
+          "run": "python -m pip install --upgrade pip\npip3 install --upgrade wheel\npip3 install --upgrade setuptools\n"
+        },
+        {
           "name": "Build",
-          "run": "python -m pip install --upgrade pip\npip3 install --upgrade wheel\npip3 install --upgrade setuptools\npython setup.py sdist\n"
+          "run": "python setup.py sdist\n"
         },
         {
           "name": "Upload artifact",
@@ -53,12 +57,12 @@
           }
         },
         {
-          "name": "Build reliq",
-          "run": "make -C reliq-c clean lib -j4 CFLAGS='-O3'\nmv reliq-c/libreliq.so reliq/\n"
+          "name": "Prepare",
+          "run": "python -m pip install --upgrade pip\npip3 install --upgrade wheel\npip3 install --upgrade setuptools\n"
         },
         {
-          "name": "Build wheel",
-          "run": "python -m pip install --upgrade pip\npip3 install --upgrade wheel\npip3 install --upgrade setuptools\nplat=\"manylinux2014_x86_64\"\nmkdir out\nfor i in 37 38 39 310 311 312 313; do python setup.py bdist_wheel --plat-name \"$plat\"\nname=\"$(basename \"$(find dist -type f | head -n1)\")\"\nbase=\"$(echo \"$name\" | sed -E \"s/-cp[0-9]+-cp[0-9]+-/-cp$i-cp$i-/\")\"\ncp \"dist/$name\" \"out/$base\" || true\n rm dist/*; sleep 5; done\n"
+          "name": "Build wheels",
+          "run": "./bdist_for_all\n"
         },
         {
           "name": "Upload artifact wheel",
@@ -96,7 +100,7 @@
             "setup": "mkdir -p \"${PWD}/artifacts\"\n",
             "dockerRunArgs": "--volume \"${PWD}/artifacts:/artifacts\"\n",
             "shell": "/bin/bash",
-            "run": "apt-get update -q -y\napt-get install -q -y git python3 python3-pip gcc make\ncase \"${{ matrix.arch }}\" in armv7) archname=\"armv7l\";; *) archname=\"${{ matrix.arch }}\";; esac\nmake -C reliq-c clean lib -j4 CFLAGS='-O3'\nmv reliq-c/libreliq.so reliq/\npython3 -m pip install --upgrade pip\npython3 -m pip install wheel --upgrade\npython3 -m pip install setuptools --upgrade\nplat=\"manylinux2014_$archname\"\nmkdir out\nfor i in 37 38 39 310 311 312 313; do python3 setup.py bdist_wheel --plat-name \"$plat\"\nname=\"$(basename \"$(find dist -type f | head -n1)\")\"\nbase=\"$(echo \"$name\" | sed -E \"s/-cp[0-9]+-cp[0-9]+-/-cp$i-cp$i-/\")\"\ncp \"dist/$name\" \"out/$base\" || true\n rm dist/*; sleep 5; done\n"
+            "run": "apt-get update -q -y\napt-get install -q -y git python3 python3-pip gcc make\npython3 -m pip install --upgrade pip\npython3 -m pip install wheel --upgrade\npython3 -m pip install setuptools --upgrade\n./bdist_for_all\n"
           }
         },
         {
@@ -110,7 +114,7 @@
       ]
     },
     "build-windows": {
-      "runs-on": "windows-2019",
+      "runs-on": "windows-2025",
       "defaults": {
         "run": {
           "shell": "msys2 {0}"
@@ -132,16 +136,16 @@
           }
         },
         {
+          "name": "Prepare",
+          "run": "python -m pip install --break-system-packages --upgrade pip\npython -m pip install --break-system-packages --upgrade wheel\npython -m pip install --break-system-packages --upgrade setuptools\n"
+        },
+        {
           "name": "Download strptime",
           "run": "curl 'https://raw.githubusercontent.com/msys2/MINGW-packages/refs/heads/master/mingw-w64-libkml/strptime.c' > reliq-c/src/strptime.c\n"
         },
         {
-          "name": "Build reliq",
-          "run": "make -C reliq-c clean lib -j4 CFLAGS='-O3' LDFLAGS='/ucrt64/lib/libgnurx.a' LIB_OTHERS='src/strptime.c'\nmv reliq-c/libreliq.so reliq/\n"
-        },
-        {
-          "name": "Build wheel",
-          "run": "python -m pip install --break-system-packages --upgrade pip\npython -m pip install --break-system-packages --upgrade wheel\npython -m pip install --break-system-packages --upgrade setuptools\nplat=\"win_amd64\"\nmkdir out\nfor i in 37 38 39 310 311 312 313; do python setup.py bdist_wheel --plat-name \"$plat\"\nname=\"$(basename \"$(find dist -type f | head -n1)\")\"\nbase=\"$(echo \"$name\" | sed -E \"s/-cp[0-9]+-cp[0-9]+-/-cp$i-cp$i-/\")\"\ncp \"dist/$name\" \"out/$base\" || true\n rm dist/*; sleep 5; done\n"
+          "name": "Build wheels",
+          "run": "./bdist_for_all\n"
         },
         {
           "name": "Upload artifact wheel",
@@ -153,13 +157,14 @@
         }
       ]
     },
-    "build-mac-arm64": {
+    "build-macos": {
       "runs-on": "macos-${{ matrix.os }}",
       "strategy": {
         "matrix": {
           "os": [
             "13",
-            "14"
+            "14",
+            "15"
           ]
         }
       },
@@ -175,22 +180,21 @@
           "uses": "actions/setup-python@v5",
           "with": {
             "python-version": "3.13",
-            "architecture": "x64"
           }
         },
         {
-          "name": "Build reliq",
-          "run": "make -C reliq-c clean lib -j4 CFLAGS='-O3'\nmv reliq-c/libreliq.so reliq/\n"
+          "name": "Prepare",
+          "run": "python -m pip install --upgrade pip\npip3 install --upgrade wheel\npip3 install --upgrade setuptools\n"
         },
         {
-          "name": "Build wheel",
-          "run": "python -m pip install --upgrade pip\npip3 install --upgrade wheel\npip3 install --upgrade setuptools\nplat=\"macosx_${{ matrix.os }}_0_arm64\"\nmkdir out\nfor i in 37 38 39 310 311 312 313; do python setup.py bdist_wheel --plat-name \"$plat\"\nname=\"$(basename \"$(find dist -type f | head -n1)\")\"\nbase=\"$(echo \"$name\" | sed -E \"s/-cp[0-9]+-cp[0-9]+-/-cp$i-cp$i-/\")\"\ncp \"dist/$name\" \"out/$base\" || true\n rm dist/*; sleep 5; done\n"
+          "name": "Build wheels",
+          "run": "./bdist_for_all\n"
         },
         {
           "name": "Upload artifact wheel",
           "uses": "actions/upload-artifact@v4",
           "with": {
-            "name": "wheel-mac-arm64-${{ matrix.os }}",
+            "name": "wheel-macos-${{ matrix.os }}",
             "path": "out/*"
           }
         }
