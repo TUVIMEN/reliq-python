@@ -28,7 +28,7 @@ c_os = get_os()
 def compile():
     others = []
     if c_os == "windows":
-        others = ["LDFLAGS='/ucrt64/lib/libgnurx.a'", "LIB_OTHERS='src/strptime.c'"]
+        others = ["LDFLAGS=/ucrt64/lib/libgnurx.a", "LIB_OTHERS=src/strptime.c"]
     subprocess.check_call(
         [
             "make",
