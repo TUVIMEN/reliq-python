@@ -5,7 +5,7 @@ import platform
 from typing import Callable
 
 for i in sorted(dir(platform)):
-    if i[:1] == "_" or i == "system_alias":
+    if i[:1] == "_" or i in ("system_alias", "freedesktop_os_release"):
         continue
     r = getattr(platform, i)
     if isinstance(r, type) or not isinstance(r, Callable):
