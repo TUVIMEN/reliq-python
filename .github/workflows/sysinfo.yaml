@@ -1,0 +1,165 @@
+{
+  "name": "sysinfo",
+  "on": {
+    "workflow_dispatch": null
+  },
+  "jobs": {
+    "linux": {
+      "runs-on": "ubuntu-22.04",
+      "steps": [
+        {
+          "uses": "actions/checkout@v4",
+          "with": {
+            "submodules": "recursive"
+          }
+        },
+        {
+          "name": "Setup Python",
+          "uses": "actions/setup-python@v5",
+          "with": {
+            "python-version": "3.13",
+            "architecture": "x64"
+          }
+        },
+        {
+          "name": "Prepare",
+          "run": "python -m pip install --upgrade pip\npip3 install --upgrade wheel\npip3 install --upgrade setuptools\n"
+        },
+        {
+          "name": "Get",
+          "run": "python sysinfo.py > linux-x86_64.info\n"
+        },
+        {
+          "name": "Upload artifact",
+          "uses": "actions/upload-artifact@v4",
+          "with": {
+            "name": "linux-x86_64",
+            "path": "linux-x86_64.info"
+          }
+        }
+      ]
+    },
+    "linux-other": {
+      "runs-on": "ubuntu-22.04",
+      "strategy": {
+        "matrix": {
+          "arch": [
+            "aarch64",
+            "armv7"
+          ]
+        }
+      },
+      "steps": [
+        {
+          "uses": "actions/checkout@v4",
+          "with": {
+            "submodules": "recursive"
+          }
+        },
+        {
+          "uses": "uraimo/run-on-arch-action@v2",
+          "with": {
+            "arch": "${{ matrix.arch }}",
+            "distro": "ubuntu22.04",
+            "githubToken": "${{ github.token }}",
+            "setup": "mkdir -p \"${PWD}/artifacts\"\n",
+            "dockerRunArgs": "--volume \"${PWD}/artifacts:/artifacts\"\n",
+            "shell": "/bin/bash",
+            "run": "apt-get update -q -y\napt-get install -q -y git python3 python3-pip\npython3 sysinfo.py > linux-\"${{ matrix.arch }}\".info\n"
+          }
+        },
+        {
+          "name": "Upload artifact",
+          "uses": "actions/upload-artifact@v4",
+          "with": {
+            "name": "linux-${{ matrix.arch }}",
+            "path": "linux-${{ matrix.arch }}.info"
+          }
+        }
+      ]
+    },
+    "windows": {
+      "runs-on": "windows-2019",
+      "defaults": {
+        "run": {
+          "shell": "msys2 {0}"
+        }
+      },
+      "steps": [
+        {
+          "uses": "msys2/setup-msys2@v2",
+          "with": {
+            "msystem": "ucrt64",
+            "update": true,
+            "install": "python python-pip"
+          }
+        },
+        {
+          "uses": "actions/checkout@v4",
+          "with": {
+            "submodules": "recursive"
+          }
+        },
+        {
+          "name": "Prepare",
+          "run": "python -m pip install --break-system-packages --upgrade pip\npython -m pip install --break-system-packages --upgrade wheel\npython -m pip install --break-system-packages --upgrade setuptools\n"
+        },
+        {
+          "name": "Get",
+          "run": "python sysinfo.py > windows.info"
+        },
+        {
+          "name": "Upload artifact",
+          "uses": "actions/upload-artifact@v4",
+          "with": {
+            "name": "windows",
+            "path": "windows.info"
+          }
+        }
+      ]
+    },
+    "mac-arm64": {
+      "runs-on": "macos-${{ matrix.os }}",
+      "strategy": {
+        "matrix": {
+          "os": [
+            "13",
+            "14"
+          ]
+        }
+      },
+      "steps": [
+        {
+          "uses": "actions/checkout@v4",
+          "with": {
+            "submodules": "recursive"
+          }
+        },
+        {
+          "name": "Setup Python",
+          "uses": "actions/setup-python@v5",
+          "with": {
+            "python-version": "3.13",
+            "architecture": "x64"
+          }
+        },
+        {
+          "name": "Prepare",
+          "run": "python -m pip install --upgrade pip\npip3 install --upgrade wheel\npip3 install --upgrade setuptools\n"
+        },
+        {
+          "name": "Get",
+          "run": "python sysinfo.py > macos-${{ matrix.os }}.info"
+        },
+        {
+          "name": "Upload artifact",
+          "uses": "actions/upload-artifact@v4",
+          "with": {
+            "name": "macos-${{ matrix.os }}",
+            "path": "macos-${{ matrix.os }}.info"
+          }
+        }
+      ]
+    }
+  }
+}
