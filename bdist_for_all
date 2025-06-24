@@ -2,6 +2,6 @@
 
 for i in 37 38 39 310 311 312 313
 do
-    python setup.py bdist_wheel --python-tag "cp$i"
+    python3 setup.py bdist_wheel --python-tag "cp$i"
     sleep 2 # all packages have the exact same data, hashes of wheels have to be unique, the only way to change hash with the same data is to create wheels at different time
 done
