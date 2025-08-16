@@ -974,7 +974,7 @@ This function should be used by packages to save reliq expressions under their d
 ## Projects using reliq in python
 
 - [forumscraper](https://github.com/TUVIMEN/forumscraper)
-- [lightnovelworld](https://github.com/TUVIMEN/lightnovelworld/)
+- [fakexy](https://github.com/TUVIMEN/fakexy)
 - [1337x-scraper](https://github.com/TUVIMEN/1337x-scraper)
 - [blu-ray-scraper](https://github.com/TUVIMEN/blu-ray-scraper)
 - [9gag-scraper](https://github.com/TUVIMEN/9gag-scraper)
