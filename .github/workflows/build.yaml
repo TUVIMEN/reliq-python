@@ -140,10 +140,6 @@
           "run": "python -m pip install --break-system-packages --upgrade pip\npython -m pip install --break-system-packages --upgrade wheel\npython -m pip install --break-system-packages --upgrade setuptools\n"
         },
         {
-          "name": "Download strptime",
-          "run": "curl 'https://raw.githubusercontent.com/msys2/MINGW-packages/refs/heads/master/mingw-w64-libkml/strptime.c' > reliq-c/src/strptime.c\n"
-        },
-        {
           "name": "Build wheels",
           "run": "./bdist_for_all\n"
         },
